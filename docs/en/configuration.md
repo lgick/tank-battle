@@ -15,13 +15,13 @@ Read in [src/server/main.js](../../src/server/main.js) when `NODE_ENV=production
 | Variable | Purpose | Default |
 | --- | --- | --- |
 | `NODE_ENV` | `production` / `development` | — |
-| `VIMP_DOMAIN` | The server domain. **Required** in production (otherwise the server exits with an error) | `localhost` |
-| `VIMP_PORT` | The Node.js app port | `3000` |
-| `VIMP_PLAYERS` | Maximum players (`game:maxPlayers`) | `30` |
-| `VIMP_MAP` | The starting map (must exist in `src/data/maps/index.js`) | `pool mini` |
-| `VIMP_ROUND_TIME` | Round time, ms | `120000` |
-| `VIMP_MAP_TIME` | Map time, ms | `600000` |
-| `VIMP_FRIENDLY_FIRE` | `true`/`false` — friendly fire | `false` |
+| `TANK_BATTLE_DOMAIN` | The server domain. **Required** in production (otherwise the server exits with an error) | `localhost` |
+| `TANK_BATTLE_PORT` | The Node.js app port | `3000` |
+| `TANK_BATTLE_PLAYERS` | Maximum players (`game:maxPlayers`) | `30` |
+| `TANK_BATTLE_MAP` | The starting map (must exist in `src/data/maps/index.js`) | `pool mini` |
+| `TANK_BATTLE_ROUND_TIME` | Round time, ms | `120000` |
+| `TANK_BATTLE_MAP_TIME` | Map time, ms | `600000` |
+| `TANK_BATTLE_FRIENDLY_FIRE` | `true`/`false` — friendly fire | `false` |
 
 In development mode `main.js` additionally forces `server:oneConnection = false` (allows multiple tabs from one IP) and `game:isDevMode = true`.
 

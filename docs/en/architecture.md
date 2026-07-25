@@ -1,6 +1,6 @@
 # Architecture
 
-VIMP Tank Battle is a multiplayer 2D real-time game. **The server is authoritative**: all physics (Rapier 2D), damage, and rules are computed on the server; the client renders the world (PixiJS) and masks network latency with interpolation and prediction.
+Tank Battle is a multiplayer 2D real-time game. **The server is authoritative**: all physics (Rapier 2D), damage, and rules are computed on the server; the client renders the world (PixiJS) and masks network latency with interpolation and prediction.
 
 ```
 ┌─────────────────────────┐        WebSocket         ┌─────────────────────────┐

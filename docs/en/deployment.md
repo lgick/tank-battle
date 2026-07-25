@@ -97,7 +97,7 @@ The server list is configured via GitHub repository variables.
    ]
    ```
 
-   _(`domain` and `port` must strictly match those specified in Step 3; the field values correspond to the `VIMP_*` variables — see [configuration.md](configuration.md#environment-variables-env))._
+   _(`domain` and `port` must strictly match those specified in Step 3; the field values correspond to the `TANK_BATTLE_*` variables — see [configuration.md](configuration.md#environment-variables-env))._
 
 3. On the **Secrets** tab there must exist the secrets for the deploy SSH access: `SERVER_USER` (the VPS user) and `SERVER_SSH_KEY` (the private key).
 4. Go to the **Actions** tab and re-run the pipeline manually (Re-run jobs), or `git push` to the `main` branch — the system will deploy the game to all servers in the list.

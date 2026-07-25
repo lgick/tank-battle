@@ -15,13 +15,13 @@
 | Переменная | Назначение | По умолчанию |
 | --- | --- | --- |
 | `NODE_ENV` | `production` / `development` | — |
-| `VIMP_DOMAIN` | Домен сервера. **Обязательна** в production (иначе сервер завершится с ошибкой) | `localhost` |
-| `VIMP_PORT` | Порт Node.js-приложения | `3000` |
-| `VIMP_PLAYERS` | Максимум игроков (`game:maxPlayers`) | `30` |
-| `VIMP_MAP` | Стартовая карта (должна существовать в `src/data/maps/index.js`) | `pool mini` |
-| `VIMP_ROUND_TIME` | Время раунда, мс | `120000` |
-| `VIMP_MAP_TIME` | Время карты, мс | `600000` |
-| `VIMP_FRIENDLY_FIRE` | `true`/`false` — огонь по своим | `false` |
+| `TANK_BATTLE_DOMAIN` | Домен сервера. **Обязательна** в production (иначе сервер завершится с ошибкой) | `localhost` |
+| `TANK_BATTLE_PORT` | Порт Node.js-приложения | `3000` |
+| `TANK_BATTLE_PLAYERS` | Максимум игроков (`game:maxPlayers`) | `30` |
+| `TANK_BATTLE_MAP` | Стартовая карта (должна существовать в `src/data/maps/index.js`) | `pool mini` |
+| `TANK_BATTLE_ROUND_TIME` | Время раунда, мс | `120000` |
+| `TANK_BATTLE_MAP_TIME` | Время карты, мс | `600000` |
+| `TANK_BATTLE_FRIENDLY_FIRE` | `true`/`false` — огонь по своим | `false` |
 
 В development-режиме `main.js` дополнительно принудительно ставит `server:oneConnection = false` (разрешает несколько вкладок с одного IP) и `game:isDevMode = true`.
 

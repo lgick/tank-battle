@@ -15,7 +15,7 @@
   left: 0;
   right: 0;
   height: 24px;
-  padding-left: 80px;
+  padding-left: 100px;
   z-index: 4;
   overflow: hidden;
 }
@@ -24,12 +24,13 @@
   position: absolute;
   left: 5px;
   top: 0;
-  font-size: 16px;
+  font-size: 11px;
   line-height: 24px;
-  width: 70px;
+  width: 90px;
   height: 24px;
   margin: 0;
   text-align: center;
+  white-space: nowrap;
 }
 
 #panel table {

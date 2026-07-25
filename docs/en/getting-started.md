@@ -8,8 +8,8 @@
 ## Installation
 
 ```bash
-git clone https://github.com/lgick/VIMP-Tank-Battle.git
-cd VIMP-Tank-Battle
+git clone https://github.com/lgick/tank-battle.git
+cd tank-battle
 npm install
 ```
 
@@ -27,6 +27,7 @@ Certificate paths are set in `src/config/server.js` (`httpsOptions`). Certificat
 ## Running
 
 ```bash
+npm run audio:process      # audio (once)
 npm run dev
 ```
 
@@ -35,7 +36,7 @@ The server starts at `https://localhost:3000` (ViteExpress serves the client alo
 Other commands:
 
 ```bash
-npm start              # production run (reads .env: VIMP_DOMAIN and others)
+npm start              # production run (reads .env: TANK_BATTLE_DOMAIN and others)
 npm run build          # build (audio processing + Vite bundle)
 npx eslint .           # linter
 npm test               # tests (Vitest), single run

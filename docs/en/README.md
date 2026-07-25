@@ -1,4 +1,4 @@
-# VIMP Tank Battle Documentation
+# Tank Battle Documentation
 
 A multiplayer 2D real-time online game: an authoritative server (Node.js, Rapier 2D), a PixiJS client, and WebSocket exchange with binary snapshots.
 

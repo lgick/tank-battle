@@ -17,43 +17,43 @@ const isProduction = env.NODE_ENV === 'production';
 // если продакшн
 if (isProduction) {
   // если не указан домен
-  if (!env.VIMP_DOMAIN) {
+  if (!env.TANK_BATTLE_DOMAIN) {
     console.error(`
-      ERROR: VIMP_DOMAIN must be set in the .env file for production.
+      ERROR: TANK_BATTLE_DOMAIN must be set in the .env file for production.
     `);
     process.exit(1);
   }
 
-  config.set('server:domain', env.VIMP_DOMAIN);
+  config.set('server:domain', env.TANK_BATTLE_DOMAIN);
 
   // порт для Node.js приложения
-  if (env.VIMP_PORT) {
-    config.set('server:port', Number(env.VIMP_PORT));
+  if (env.TANK_BATTLE_PORT) {
+    config.set('server:port', Number(env.TANK_BATTLE_PORT));
   }
 
   // максимальное количество игроков
-  if (env.VIMP_PLAYERS) {
-    config.set('game:maxPlayers', Number(env.VIMP_PLAYERS));
+  if (env.TANK_BATTLE_PLAYERS) {
+    config.set('game:maxPlayers', Number(env.TANK_BATTLE_PLAYERS));
   }
 
   // стартовая карта
-  if (env.VIMP_MAP && config.get('game:maps')[env.VIMP_MAP]) {
-    config.set('game:currentMap', env.VIMP_MAP);
+  if (env.TANK_BATTLE_MAP && config.get('game:maps')[env.TANK_BATTLE_MAP]) {
+    config.set('game:currentMap', env.TANK_BATTLE_MAP);
   }
 
   // время раунда
-  if (env.VIMP_ROUND_TIME) {
-    config.set('game:timers:roundTime', Number(env.VIMP_ROUND_TIME));
+  if (env.TANK_BATTLE_ROUND_TIME) {
+    config.set('game:timers:roundTime', Number(env.TANK_BATTLE_ROUND_TIME));
   }
 
   // время карты
-  if (env.VIMP_MAP_TIME) {
-    config.set('game:timers:mapTime', Number(env.VIMP_MAP_TIME));
+  if (env.TANK_BATTLE_MAP_TIME) {
+    config.set('game:timers:mapTime', Number(env.TANK_BATTLE_MAP_TIME));
   }
 
   // "огонь по своим" (friendly fire)
-  if (env.VIMP_FRIENDLY_FIRE) {
-    config.set('game:parts:friendlyFire', env.VIMP_FRIENDLY_FIRE === 'true');
+  if (env.TANK_BATTLE_FRIENDLY_FIRE) {
+    config.set('game:parts:friendlyFire', env.TANK_BATTLE_FRIENDLY_FIRE === 'true');
   }
 
   // если задан режим разработки

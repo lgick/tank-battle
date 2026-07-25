@@ -8,8 +8,8 @@
 ## Установка
 
 ```bash
-git clone https://github.com/lgick/VIMP-Tank-Battle.git
-cd VIMP-Tank-Battle
+git clone https://github.com/lgick/tank-battle.git
+cd tank-battle
 npm install
 ```
 
@@ -27,6 +27,7 @@ mkcert -key-file key.pem -cert-file cert.pem localhost 127.0.0.1 ::1
 ## Запуск
 
 ```bash
+npm run audio:process   # генерация аудио (один раз)
 npm run dev
 ```
 
@@ -35,7 +36,7 @@ npm run dev
 Остальные команды:
 
 ```bash
-npm start              # production-запуск (читает .env: VIMP_DOMAIN и др.)
+npm start              # production-запуск (читает .env: TANK_BATTLE_DOMAIN и др.)
 npm run build          # сборка (обработка аудио + Vite bundle)
 npx eslint .           # линтер
 npm test               # тесты (Vitest), одиночный прогон

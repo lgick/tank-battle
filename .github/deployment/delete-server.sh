@@ -1,32 +1,32 @@
 #!/bin/bash
 # ====================================================
 # delete-server.sh
-# Удаляет игровые серверы VIMP.
+# Удаляет игровые серверы TANK BATTLE.
 # ====================================================
 
 echo "=================================================="
-echo "           🗑️ УДАЛЕНИЕ СЕРВЕРА VIMP               "
+echo "           🗑️ УДАЛЕНИЕ СЕРВЕРА TANK BATTLE               "
 echo "=================================================="
 
 # Папка, где находятся игровые проекты
 PROJECTS_ROOT="$HOME/vimp_projects"
 
 # ----------------------------------------------------
-# 1. Поиск существующих серверов VIMP
+# 1. Поиск существующих серверов TANK BATTLE
 # ----------------------------------------------------
 # Логика: берём конфиги Nginx и проверяем, есть ли для них папки проектов.
 RAW_SITES=$(ls /etc/nginx/sites-enabled/ | grep -v "default")
-VIMP_SITES=""
+TANK_BATTLE_SITES=""
 
 for site in $RAW_SITES; do
   if [ -d "$PROJECTS_ROOT/$site" ]; then
-    VIMP_SITES="$VIMP_SITES $site"
+    TANK_BATTLE_SITES="$TANK_BATTLE_SITES $site"
   fi
 done
 
 # Если серверов нет
-if [ -z "$VIMP_SITES" ]; then
-  echo "❌ Игровых серверов VIMP не найдено."
+if [ -z "$TANK_BATTLE_SITES" ]; then
+  echo "❌ Игровых серверов TANK BATTLE не найдено."
   echo "   (Проверено: конфиги Nginx + наличие папок в $PROJECTS_ROOT)"
   exit 0
 fi
@@ -35,18 +35,18 @@ fi
 # 2. Меню выбора сервера
 # ----------------------------------------------------
 PS3="👉 Выберите сервер для УДАЛЕНИЯ (введите номер): "
-select DOMAIN in $VIMP_SITES "Отмена"; do
+select DOMAIN in $TANK_BATTLE_SITES "Отмена"; do
   if [[ "$DOMAIN" == "Отмена" ]]; then
     echo "Действие отменено."
     exit 0
 
   elif [[ -n "$DOMAIN" ]]; then
     echo ""
-    echo "🚨 ВНИМАНИЕ! Вы собираетесь удалить сервер VIMP: $DOMAIN"
+    echo "🚨 ВНИМАНИЕ! Вы собираетесь удалить сервер TANK BATTLE: $DOMAIN"
     echo "   Будет выполнено удаление:"
     echo "   - Конфига Nginx  (/etc/nginx/sites-enabled/$DOMAIN)"
     echo "   - SSL-сертификатов (через Certbot)"
-    echo "   - Docker-контейнера (vimp-$DOMAIN)"
+    echo "   - Docker-контейнера (tank-battle-$DOMAIN)"
     echo "   - Папки проекта ($PROJECTS_ROOT/$DOMAIN)"
     echo ""
     read -p "Для подтверждения введите 'yes': " CONFIRM
@@ -69,7 +69,7 @@ echo "🔥 Удаление сервера: $DOMAIN..."
 # ----------------------------------------------------
 # 1. Docker
 # ----------------------------------------------------
-CONTAINER_NAME="vimp-$DOMAIN"
+CONTAINER_NAME="tank-battle-$DOMAIN"
 echo "🐳 Остановка Docker-контейнера: $CONTAINER_NAME..."
 docker stop "$CONTAINER_NAME" 2>/dev/null || true
 docker rm "$CONTAINER_NAME" 2>/dev/null || true

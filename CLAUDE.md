@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-VIMP Tank Battle — a multiplayer 2D real-time online tank game. The server runs an authoritative physics loop; clients render via PixiJS and communicate over WebSocket.
+Tank Battle — a multiplayer 2D real-time online tank game. The server runs an authoritative physics loop; clients render via PixiJS and communicate over WebSocket.
 
 ## Documentation
 
@@ -72,7 +72,7 @@ mkdir .certs && cd .certs
 mkcert -key-file key.pem -cert-file cert.pem localhost 127.0.0.1 ::1
 ```
 
-In production, the server runs plain HTTP behind Nginx (which handles HTTPS). `.env` file controls runtime config (`VIMP_DOMAIN`, `VIMP_PORT`, `VIMP_PLAYERS`, `VIMP_MAP`, `VIMP_ROUND_TIME`, `VIMP_MAP_TIME`, `VIMP_FRIENDLY_FIRE`).
+In production, the server runs plain HTTP behind Nginx (which handles HTTPS). `.env` file controls runtime config (`TANK_BATTLE_DOMAIN`, `TANK_BATTLE_PORT`, `TANK_BATTLE_PLAYERS`, `TANK_BATTLE_MAP`, `TANK_BATTLE_ROUND_TIME`, `TANK_BATTLE_MAP_TIME`, `TANK_BATTLE_FRIENDLY_FIRE`).
 
 ## Architecture
 
@@ -211,7 +211,7 @@ Port IDs live in `src/config/wsports.js` (источник истины). Server
 
 1. Create `src/data/maps/<name>.js` following the existing map format (layers, tiles, respawns, physicsStatic, physicsDynamic).
 2. Export and register it in `src/data/maps/index.js`.
-3. The map name becomes available in votes and via `VIMP_MAP` env var.
+3. The map name becomes available in votes and via `TANK_BATTLE_MAP` env var.
 
 ## Adding a New Weapon
 

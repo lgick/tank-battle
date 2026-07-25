@@ -355,7 +355,7 @@ generate_dhparam() {
 }
 
 write_nginx_template() {
-  local dest="/etc/nginx/vimp-game.template"
+  local dest="/etc/nginx/tank-battle-game.template"
   log "Запись шаблона Nginx в $dest"
 
   if [[ $DRY_RUN -eq 1 ]]; then
@@ -367,7 +367,7 @@ EOF
 
   sudo tee "$dest" >/dev/null <<'EOF'
 # =================================================================
-# ШАБЛОН ИГРОВОГО СЕРВЕРА VIMP
+# ШАБЛОН ИГРОВОГО СЕРВЕРА TANK BATTLE
 # =================================================================
 
 # 1. Редирект HTTP -> HTTPS

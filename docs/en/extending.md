@@ -14,7 +14,7 @@ Guides for adding content. The general project rule: new entities are made in th
    - `step` — the tile size;
    - `respawns` — per-team spawn points: arrays `[x, y, angle]`;
    - `map` — the tile matrix.
-2. Register the map in [src/data/maps/index.js](../../src/data/maps/index.js) — the object key becomes the name in votes and for `VIMP_MAP`.
+2. Register the map in [src/data/maps/index.js](../../src/data/maps/index.js) — the object key becomes the name in votes and for `TANK_BATTLE_MAP`.
 
 ## New weapon
 

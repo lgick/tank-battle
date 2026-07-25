@@ -1,4 +1,4 @@
-# VIMP Tank Battle
+# Tank Battle
 
 A multiplayer 2D real-time online game: team-based tank battles played in rounds.
 
@@ -11,8 +11,8 @@ A multiplayer 2D real-time online game: team-based tank battles played in rounds
 ## Quick start
 
 ```bash
-git clone https://github.com/lgick/VIMP-Tank-Battle.git
-cd VIMP-Tank-Battle
+git clone https://github.com/lgick/tank-battle.git
+cd tank-battle
 npm install
 npm run dev
 ```

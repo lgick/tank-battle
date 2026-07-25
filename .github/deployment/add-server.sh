@@ -1,14 +1,14 @@
 #!/bin/bash
 # ====================================================
 # add-server.sh
-# Добавление нового игрового сервера vimp.
+# Добавление нового игрового сервера tank-battle.
 # ====================================================
 
 set -euo pipefail
 IFS=$'\n\t'
 
 # --- Глобальные переменные (инициализация для set -u) ---
-TEMPLATE="/etc/nginx/vimp-game.template"
+TEMPLATE="/etc/nginx/tank-battle-game.template"
 DEFAULT_EMAIL="admin@example.com"
 PROJECTS_ROOT="$HOME/vimp_projects"
 DOMAIN=""
@@ -136,7 +136,7 @@ read_email() {
 check_system_installed
 
 # --- Основной процесс ---
-info "🚀 МАСТЕР УСТАНОВКИ СЕРВЕРА VIMP"
+info "🚀 МАСТЕР УСТАНОВКИ СЕРВЕРА TANK BATTLE"
 
 read_domain
 read_port
@@ -166,7 +166,7 @@ server {
   server_name $DOMAIN;
 
   location / {
-    return 200 "VIMP Server: Ожидание настройки SSL...";
+    return 200 "Tank Battle Server: Ожидание настройки SSL...";
     add_header Content-Type text/plain;
   }
 }

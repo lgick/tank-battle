@@ -1,7 +1,7 @@
 import VIMP from '../server/modules/VIMP.js';
 
 export default {
-  name: 'VIMP Tank Battle',
+  name: 'Tank Battle',
   protocol: 'https:',
   domain: 'localhost',
   port: 3000,

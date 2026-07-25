@@ -1,17 +1,17 @@
 {
-  "name": "vimp",
+  "name": "tank-battle",
   "version": "2.0",
   "author": "lgick",
   "license": "MIT",
   "private": false,
   "description": "game",
-  "homepage": "https://github.com/lgick/VIMP-Tank-Battle#readme",
+  "homepage": "https://github.com/lgick/tank-battle#readme",
   "bugs": {
-    "url": "https://github.com/lgick/VIMP-Tank-Battle/issues"
+    "url": "https://github.com/lgick/tank-battle/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/lgick/VIMP-Tank-Battle.git"
+    "url": "git+ssh://git@github.com/lgick/tank-battle.git"
   },
   "type": "module",
   "main": "src/server/main.js",
