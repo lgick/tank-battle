@@ -2,7 +2,7 @@
 # 1. BUILDER — фронтенд, обрабатка аудио
 # ============================================================
 
-FROM node:20-slim AS builder
+FROM node:24-slim AS builder
 
 # ffmpeg для process-audio.js
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -30,7 +30,7 @@ RUN npm run build
 # 2. RUNNER — Production Image
 # ============================================================
 
-FROM node:20-slim AS runner
+FROM node:24-slim AS runner
 
 WORKDIR /app
 

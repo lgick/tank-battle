@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- **Node.js 22** (CI uses Node 22), npm;
+- **Node.js 24** (CI uses Node 24), npm;
 - **mkcert** — local HTTPS certificates are required for development (the WebSocket runs over `wss://`).
 
 ## Installation
