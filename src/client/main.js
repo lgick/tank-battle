@@ -620,7 +620,11 @@ function runModules(data) {
   //==========================================//
 
   const panelModel = new PanelModel(panelData.keys);
-  const panelView = new PanelView(panelModel, panelData.elems);
+  const panelView = new PanelView(
+    panelModel,
+    panelData.elems,
+    panelData.healthAnimation,
+  );
 
   modules.panel = new PanelCtrl(panelModel, panelView);
 

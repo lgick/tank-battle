@@ -10,6 +10,8 @@ const elems = {
   weapons: { w1: 'panel-w1', w2: 'panel-w2' },
 };
 
+const healthAnimation = { blocks: 30, delay: 500, duration: 500 };
+
 const seedDom = () => {
   document.body.innerHTML = `
     <div id="panel-time"></div>
@@ -21,6 +23,8 @@ const seedDom = () => {
 
 const makeModel = () => ({ publisher: new Publisher() });
 
+const newView = model => new PanelView(model, elems, healthAnimation);
+
 beforeEach(async () => {
   vi.resetModules();
   seedDom();
@@ -30,7 +34,7 @@ beforeEach(async () => {
 
 describe('PanelView.initHealthBar', () => {
   it('создаёт 30 блоков здоровья внутри обёртки', () => {
-    new PanelView(makeModel(), elems);
+    newView(makeModel());
 
     const wrapper = document.querySelector('.panel-health-wrapper');
     expect(wrapper).not.toBeNull();
@@ -40,7 +44,7 @@ describe('PanelView.initHealthBar', () => {
 
 describe('PanelView.update', () => {
   it('текстовая панель получает значение', () => {
-    const view = new PanelView(makeModel(), elems);
+    const view = newView(makeModel());
 
     view.update({ name: 'time', value: '02:30' });
 
@@ -49,7 +53,7 @@ describe('PanelView.update', () => {
   });
 
   it('полное здоровье подсвечивает все блоки', () => {
-    const view = new PanelView(makeModel(), elems);
+    const view = newView(makeModel());
 
     view.update({ name: 'health', value: 100 });
 
@@ -61,7 +65,7 @@ describe('PanelView.update', () => {
   });
 
   it('половина здоровья заполняет половину блоков', () => {
-    const view = new PanelView(makeModel(), elems);
+    const view = newView(makeModel());
 
     view.update({ name: 'health', value: 50 });
 
@@ -75,14 +79,38 @@ describe('PanelView.update', () => {
 
 describe('PanelView.hidePanel / setCurrentWeapon', () => {
   it('hidePanel скрывает указанную панель', () => {
-    const view = new PanelView(makeModel(), elems);
+    const view = newView(makeModel());
 
     view.hidePanel('time');
     expect(document.getElementById('panel-time').style.display).toBe('none');
   });
 
+  it('hidePanel("health") во время анимации отменяет таймеры заполнения', () => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+    vi.useFakeTimers();
+
+    const view = newView(makeModel());
+
+    view.update({ name: 'health', value: 100 });
+    view.playRoundStart();
+
+    // спектатор: панель здоровья скрывается посреди анимации
+    view.hidePanel('health');
+
+    const beforeHtml = document.getElementById('panel-health').innerHTML;
+
+    vi.advanceTimersByTime(1000);
+
+    // таймеры отменены — скрытая полоса не перекрашивается в фоне
+    expect(document.getElementById('panel-health').innerHTML).toBe(
+      beforeHtml,
+    );
+
+    vi.useRealTimers();
+  });
+
   it('setCurrentWeapon помечает активное оружие классом active', () => {
-    const view = new PanelView(makeModel(), elems);
+    const view = newView(makeModel());
 
     view.setCurrentWeapon('w2');
 
@@ -104,7 +132,7 @@ describe('PanelView.playRoundStart', () => {
     window.matchMedia = vi.fn().mockReturnValue({ matches: false });
     vi.useFakeTimers();
 
-    const view = new PanelView(makeModel(), elems);
+    const view = newView(makeModel());
 
     // sendPlayerDefaultShot (панель) приходит раньше sendRoundStart
     view.update({ name: 'health', value: 100 });
@@ -126,7 +154,7 @@ describe('PanelView.playRoundStart', () => {
     window.matchMedia = vi.fn().mockReturnValue({ matches: false });
     vi.useFakeTimers();
 
-    const view = new PanelView(makeModel(), elems);
+    const view = newView(makeModel());
 
     view.update({ name: 'health', value: 100 });
     view.playRoundStart();
@@ -150,7 +178,7 @@ describe('PanelView.playRoundStart', () => {
     window.matchMedia = vi.fn().mockReturnValue({ matches: false });
     vi.useFakeTimers();
 
-    const view = new PanelView(makeModel(), elems);
+    const view = newView(makeModel());
 
     view.update({ name: 'health', value: 100 });
     view.playRoundStart();
@@ -176,7 +204,7 @@ describe('PanelView.playRoundStart', () => {
   it('без ранее известного здоровья анимацию не запускает и не трогает полосу', () => {
     window.matchMedia = vi.fn().mockReturnValue({ matches: false });
 
-    const view = new PanelView(makeModel(), elems);
+    const view = newView(makeModel());
 
     const before = document.getElementById('panel-health').innerHTML;
 
@@ -190,7 +218,7 @@ describe('PanelView.playRoundStart', () => {
   it('при prefers-reduced-motion не запускает анимацию и применяет update сразу', () => {
     window.matchMedia = vi.fn().mockReturnValue({ matches: true });
 
-    const view = new PanelView(makeModel(), elems);
+    const view = newView(makeModel());
 
     view.playRoundStart();
     view.update({ name: 'health', value: 50 });
@@ -206,7 +234,7 @@ describe('PanelView.reset', () => {
     window.matchMedia = vi.fn().mockReturnValue({ matches: false });
     vi.useFakeTimers();
 
-    const view = new PanelView(makeModel(), elems);
+    const view = newView(makeModel());
 
     view.update({ name: 'health', value: 100 });
     view.playRoundStart();
@@ -237,7 +265,7 @@ describe('PanelView.reset', () => {
 describe('PanelView: события модели', () => {
   it('data → update, activeWeapon → setCurrentWeapon', () => {
     const model = makeModel();
-    new PanelView(model, elems);
+    newView(model);
 
     model.publisher.emit('data', { name: 'time', value: '01:00' });
     model.publisher.emit('activeWeapon', 'w1');

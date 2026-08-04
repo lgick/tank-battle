@@ -6,11 +6,8 @@ import { prefersReducedMotion } from '../../../lib/motion.js';
 
 let panelView;
 
-const HEALTH_FILL_DELAY_MS = 500; // задержка перед началом заполнения
-const HEALTH_FILL_DURATION_MS = 500; // длительность заполнения слева направо
-
 export default class PanelView {
-  constructor(model, elems) {
+  constructor(model, elems, healthAnimation) {
     if (panelView) {
       return panelView;
     }
@@ -30,9 +27,12 @@ export default class PanelView {
       );
     }
 
+    this._healthFillDelayMs = healthAnimation.delay;
+    this._healthFillDurationMs = healthAnimation.duration;
+
     this._healthBarWrapper = null; // контейнер
     this._healthBlocks = []; // блоки здоровья
-    this._totalHealthBlocks = 30; // количество блоков здоровья
+    this._totalHealthBlocks = healthAnimation.blocks; // количество блоков здоровья
     this._healthBlockColors = []; // цвета блоков здоровья
     this._emptyBlockColor = '#888'; // цвет пустых блоков
 
@@ -182,13 +182,14 @@ export default class PanelView {
     this._healthDelayTimer = setTimeout(() => {
       this._healthDelayTimer = null;
       this._animateHealthFill();
-    }, HEALTH_FILL_DELAY_MS);
+    }, this._healthFillDelayMs);
   }
 
   // заполняет блоки здоровья по одному до this._healthTarget за время задержки
   _animateHealthFill() {
     const { blocksToShow, blink } = this._healthTarget;
-    const step = blocksToShow > 0 ? HEALTH_FILL_DURATION_MS / blocksToShow : 0;
+    const step =
+      blocksToShow > 0 ? this._healthFillDurationMs / blocksToShow : 0;
 
     for (let index = 0; index < blocksToShow; index += 1) {
       this._healthBlockTimers.push(
@@ -243,6 +244,11 @@ export default class PanelView {
   }
 
   hidePanel(name) {
+    if (name === 'health') {
+      this._cancelHealthTimers();
+      this._healthAnimating = false;
+    }
+
     this._panels[name].style.display = 'none';
   }
 

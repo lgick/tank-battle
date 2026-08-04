@@ -164,7 +164,7 @@ Current canvases: `vimp` (16:9, zoom 5:1, dynamic camera, shake) and `radar` (15
 ### Other modules
 
 - **`chat`** — chat DOM element ids, output limits (`listLimit: 5` lines, `lineTime: 15000` ms), the cache, and the **system message templates** (`messages`): groups `s` (statuses/commands), `v` (votes), `m` (maps), `c` (teams), `n` (names), `b` (bots). The server sends only `'group:number:params'`, the client builds the text.
-- **`panel`** — panel element ids and the mapping of server keys (`t`, `h`, `wa`, `w1`, `w2`) to elements.
+- **`panel`** — panel element ids and the mapping of server keys (`t`, `h`, `wa`, `w1`, `w2`) to elements; `healthAnimation` (`blocks`/`delay`/`duration`) parametrizes the round-start health bar fill (see [client.md](client.md#mvc-components-srcclientcomponents)).
 - **`stat`** — the ids of header/body tables (`heads`, `bodies`) and `sortList` — sorting parameters: an array of pairs `[cell number, descending?]`; on a tie the comparison moves to the next pair.
 - **`vote`** — DOM ids/classes and the **vote templates** (`templates`): `[title with placeholders {0}, options (an array — static, a string — request a list from the server), timeOff]`. `menu` — the items of the main vote menu.
 - **`gameInform`** / **`techInformList`** — templates of game messages (victory, round start) and technical screens (server full, idle/latency kick, etc.).
