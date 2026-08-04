@@ -623,7 +623,7 @@ function runModules(data) {
   const panelView = new PanelView(
     panelModel,
     panelData.elems,
-    panelData.healthAnimation,
+    panelData.health,
   );
 
   modules.panel = new PanelCtrl(panelModel, panelView);

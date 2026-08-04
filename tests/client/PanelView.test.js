@@ -10,7 +10,7 @@ const elems = {
   weapons: { w1: 'panel-w1', w2: 'panel-w2' },
 };
 
-const healthAnimation = { blocks: 30, delay: 500, duration: 500 };
+const health = { blocks: 30, animation: { delay: 500, duration: 500 } };
 
 const seedDom = () => {
   document.body.innerHTML = `
@@ -23,7 +23,8 @@ const seedDom = () => {
 
 const makeModel = () => ({ publisher: new Publisher() });
 
-const newView = model => new PanelView(model, elems, healthAnimation);
+const newView = (model, healthConfig = health) =>
+  new PanelView(model, elems, healthConfig);
 
 beforeEach(async () => {
   vi.resetModules();
@@ -39,6 +40,15 @@ describe('PanelView.initHealthBar', () => {
     const wrapper = document.querySelector('.panel-health-wrapper');
     expect(wrapper).not.toBeNull();
     expect(wrapper.querySelectorAll('.panel-health-block').length).toBe(30);
+  });
+
+  it('не падает при blocks: 1 (progress = index / (blocks - 1) не должен делить на 0)', () => {
+    expect(() =>
+      newView(makeModel(), {
+        blocks: 1,
+        animation: { delay: 500, duration: 500 },
+      }),
+    ).not.toThrow();
   });
 });
 
@@ -102,9 +112,7 @@ describe('PanelView.hidePanel / setCurrentWeapon', () => {
     vi.advanceTimersByTime(1000);
 
     // таймеры отменены — скрытая полоса не перекрашивается в фоне
-    expect(document.getElementById('panel-health').innerHTML).toBe(
-      beforeHtml,
-    );
+    expect(document.getElementById('panel-health').innerHTML).toBe(beforeHtml);
 
     vi.useRealTimers();
   });
@@ -139,9 +147,9 @@ describe('PanelView.playRoundStart', () => {
     view.playRoundStart();
 
     let blocks = [...document.querySelectorAll('#panel-health div div')];
-    expect(
-      blocks.every(b => b.className === 'panel-health-block-empty'),
-    ).toBe(true);
+    expect(blocks.every(b => b.className === 'panel-health-block-empty')).toBe(
+      true,
+    );
 
     vi.advanceTimersByTime(1000); // задержка + полная длительность заполнения
 
@@ -163,9 +171,9 @@ describe('PanelView.playRoundStart', () => {
     view.update({ name: 'health', value: 100 });
 
     let blocks = [...document.querySelectorAll('#panel-health div div')];
-    expect(
-      blocks.every(b => b.className === 'panel-health-block-empty'),
-    ).toBe(true);
+    expect(blocks.every(b => b.className === 'panel-health-block-empty')).toBe(
+      true,
+    );
 
     vi.advanceTimersByTime(1000);
 
@@ -193,9 +201,7 @@ describe('PanelView.playRoundStart', () => {
     // финальный таймер анимации не должен затем перерисовать поверх
     vi.advanceTimersByTime(1000);
 
-    const blocksAfter = [
-      ...document.querySelectorAll('#panel-health div div'),
-    ];
+    const blocksAfter = [...document.querySelectorAll('#panel-health div div')];
     expect(
       blocksAfter.filter(b => b.className === 'panel-health-block').length,
     ).toBe(18);
@@ -243,17 +249,15 @@ describe('PanelView.reset', () => {
     vi.advanceTimersByTime(1000);
 
     const blocks = [...document.querySelectorAll('#panel-health div div')];
-    expect(
-      blocks.every(b => b.className === 'panel-health-block-empty'),
-    ).toBe(true);
+    expect(blocks.every(b => b.className === 'panel-health-block-empty')).toBe(
+      true,
+    );
 
     // после reset playRoundStart без нового update ничего не анимирует
     view.playRoundStart();
     vi.advanceTimersByTime(1000);
 
-    const blocksAfter = [
-      ...document.querySelectorAll('#panel-health div div'),
-    ];
+    const blocksAfter = [...document.querySelectorAll('#panel-health div div')];
     expect(
       blocksAfter.every(b => b.className === 'panel-health-block-empty'),
     ).toBe(true);

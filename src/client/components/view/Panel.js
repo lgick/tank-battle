@@ -7,7 +7,7 @@ import { prefersReducedMotion } from '../../../lib/motion.js';
 let panelView;
 
 export default class PanelView {
-  constructor(model, elems, healthAnimation) {
+  constructor(model, elems, health) {
     if (panelView) {
       return panelView;
     }
@@ -27,12 +27,12 @@ export default class PanelView {
       );
     }
 
-    this._healthFillDelayMs = healthAnimation.delay;
-    this._healthFillDurationMs = healthAnimation.duration;
+    this._healthFillDelayMs = health.animation.delay;
+    this._healthFillDurationMs = health.animation.duration;
 
     this._healthBarWrapper = null; // контейнер
     this._healthBlocks = []; // блоки здоровья
-    this._totalHealthBlocks = healthAnimation.blocks; // количество блоков здоровья
+    this._totalHealthBlocks = health.blocks; // количество блоков здоровья (минимум 2)
     this._healthBlockColors = []; // цвета блоков здоровья
     this._emptyBlockColor = '#888'; // цвет пустых блоков
 
@@ -82,7 +82,9 @@ export default class PanelView {
 
   // вычисляет цвет для каждого блока здоровья на основе его индекса
   getHealthBlockColor(index) {
-    const progress = index / (this._totalHealthBlocks - 1);
+    // Math.max(1, ...): при totalHealthBlocks === 1 знаменатель не должен
+    // обнуляться (иначе progress = NaN и интервал ниже не найдётся)
+    const progress = index / Math.max(1, this._totalHealthBlocks - 1);
 
     const colors = [
       { p: 0, c: { r: 255, g: 50, b: 50 } }, // red
@@ -154,9 +156,7 @@ export default class PanelView {
     });
 
     if (blink) {
-      this._healthBlocks[blocksToShow - 1].classList.add(
-        'panel-health-blink',
-      );
+      this._healthBlocks[blocksToShow - 1].classList.add('panel-health-blink');
     }
   }
 
