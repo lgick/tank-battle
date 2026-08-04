@@ -88,6 +88,11 @@ const apps = {};
 
 let gameInformer = null;
 let gameInformList = []; // массив игровых сообщений
+let logoAnimationEndHandler = null; // текущий слушатель animationend логотипа
+
+// код GAME_CODES.roundStart (src/server/socket/SocketManager.js) — совпадает
+// с индексом 'ROUND START!' в gameInform.list (src/config/client.js)
+const GAME_ROUND_START_CODE = 1;
 
 const techInformer = document.getElementById('tech-informer');
 let techInformList = []; // массив системных сообщений
@@ -371,6 +376,11 @@ socketMethods[PS_GAME_INFORM_DATA] = data => {
       gameInformer.textContent = '';
       gameInformer.style.display = 'none';
     }, 3000);
+
+    if (key === GAME_ROUND_START_CODE) {
+      playLogoRoundStart();
+      modules.panel?.playRoundStart();
+    }
   }
 };
 
@@ -442,6 +452,34 @@ socketMethods[PS_CONSOLE] = data => {
 };
 
 // ФУНКЦИИ
+
+// проигрывает волновую анимацию логотипа в начале раунда; логотип статичен
+// (задаётся в разметке) и не относится к модулю Panel, поэтому управляется
+// напрямую отсюда
+function playLogoRoundStart() {
+  const logo = document.getElementById('logo');
+
+  if (!logo) {
+    return;
+  }
+
+  if (logoAnimationEndHandler) {
+    logo.removeEventListener('animationend', logoAnimationEndHandler);
+  }
+
+  logo.classList.remove('logo-round-start');
+  void logo.offsetWidth; // reflow: перезапускает анимацию при повторном раунде
+  logo.classList.add('logo-round-start');
+
+  logoAnimationEndHandler = () => {
+    logo.classList.remove('logo-round-start');
+    logoAnimationEndHandler = null;
+  };
+
+  logo.addEventListener('animationend', logoAnimationEndHandler, {
+    once: true,
+  });
+}
 
 // применяет игровые данные к сущностям
 function applyGameData(game) {

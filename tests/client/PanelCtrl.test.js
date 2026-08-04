@@ -16,4 +16,10 @@ describe('PanelCtrl', () => {
     new PanelCtrl(model, { publisher: new Publisher() }).update([1, 2, 3]);
     expect(model.update).toHaveBeenCalledWith([1, 2, 3]);
   });
+
+  it('playRoundStart проксируется в view', () => {
+    const view = { publisher: new Publisher(), playRoundStart: vi.fn() };
+    new PanelCtrl({}, view).playRoundStart();
+    expect(view.playRoundStart).toHaveBeenCalled();
+  });
 });

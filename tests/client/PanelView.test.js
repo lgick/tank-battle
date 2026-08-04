@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import Publisher from '../../src/lib/Publisher.js';
 
 // PanelView — синглтон, перезагружаем модуль для изоляции
@@ -92,6 +92,53 @@ describe('PanelView.hidePanel / setCurrentWeapon', () => {
     expect(
       document.getElementById('panel-w2').classList.contains('active'),
     ).toBe(true);
+  });
+});
+
+describe('PanelView.playRoundStart', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('обнуляет полосу здоровья и заполняет её блоками к концу анимации', () => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+    vi.useFakeTimers();
+
+    const view = new PanelView(makeModel(), elems);
+
+    view.playRoundStart();
+
+    let blocks = [...document.querySelectorAll('#panel-health div div')];
+    expect(
+      blocks.every(b => b.className === 'panel-health-block-empty'),
+    ).toBe(true);
+
+    // значение здоровья, пришедшее во время анимации, не должно её перебивать
+    view.update({ name: 'health', value: 100 });
+
+    blocks = [...document.querySelectorAll('#panel-health div div')];
+    expect(
+      blocks.every(b => b.className === 'panel-health-block-empty'),
+    ).toBe(true);
+
+    vi.advanceTimersByTime(1000); // задержка + полная длительность заполнения
+
+    blocks = [...document.querySelectorAll('#panel-health div div')];
+    const filled = blocks.filter(b => b.className === 'panel-health-block');
+    expect(filled.length).toBe(30);
+  });
+
+  it('при prefers-reduced-motion не запускает анимацию и применяет update сразу', () => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+
+    const view = new PanelView(makeModel(), elems);
+
+    view.playRoundStart();
+    view.update({ name: 'health', value: 50 });
+
+    const blocks = [...document.querySelectorAll('#panel-health div div')];
+    const filled = blocks.filter(b => b.className === 'panel-health-block');
+    expect(filled.length).toBe(15);
   });
 });
 

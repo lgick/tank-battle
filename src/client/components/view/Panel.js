@@ -5,6 +5,9 @@ import { lerp } from '../../../lib/math.js';
 
 let panelView;
 
+const HEALTH_FILL_DELAY_MS = 500; // задержка перед началом заполнения
+const HEALTH_FILL_DURATION_MS = 500; // длительность заполнения слева направо
+
 export default class PanelView {
   constructor(model, elems) {
     if (panelView) {
@@ -31,6 +34,12 @@ export default class PanelView {
     this._totalHealthBlocks = 30; // количество блоков здоровья
     this._healthBlockColors = []; // цвета блоков здоровья
     this._emptyBlockColor = '#888'; // цвет пустых блоков
+
+    this._healthAnimating = false; // идёт анимация заполнения (playRoundStart)
+    this._pendingHealthTarget = null; // {blocksToShow, blink}, ждёт конца анимации
+    this._healthDelayTimer = null;
+    this._healthFillTimer = null;
+    this._healthBlockTimers = [];
 
     this.publisher = new Publisher();
 
@@ -108,30 +117,120 @@ export default class PanelView {
     // логика для здоровья
     if (name === 'health') {
       const blocksToShow = Math.ceil((value / 100) * this._totalHealthBlocks);
-
-      this._healthBlocks.forEach((block, index) => {
-        if (index < blocksToShow) {
-          block.className = 'panel-health-block';
-          block.style.backgroundColor = this._healthBlockColors[index];
-        } else {
-          block.className = 'panel-health-block-empty';
-          block.style.backgroundColor = this._emptyBlockColor;
-        }
-      });
-
-      // мигание для последнего неполного блока
       const exactBlocks = (value / 100) * this._totalHealthBlocks;
+      const blink = value > 0 && exactBlocks % 1 !== 0;
 
-      if (value > 0 && exactBlocks % 1 !== 0) {
-        this._healthBlocks[blocksToShow - 1].classList.add(
-          'panel-health-blink',
-        );
+      // во время анимации заполнения (playRoundStart) значение откладывается
+      // и применяется по завершении, чтобы не перебивать анимацию
+      if (this._healthAnimating) {
+        this._pendingHealthTarget = { blocksToShow, blink };
+      } else {
+        this._paintHealthBar(blocksToShow, blink);
       }
     } else {
       elem.textContent = value;
     }
 
     elem.style.display = 'table-cell';
+  }
+
+  // закрашивает блоки здоровья до blocksToShow, опционально мигает последним
+  _paintHealthBar(blocksToShow, blink) {
+    this._healthBlocks.forEach((block, index) => {
+      if (index < blocksToShow) {
+        block.className = 'panel-health-block';
+        block.style.backgroundColor = this._healthBlockColors[index];
+      } else {
+        block.className = 'panel-health-block-empty';
+        block.style.backgroundColor = this._emptyBlockColor;
+      }
+    });
+
+    if (blink) {
+      this._healthBlocks[blocksToShow - 1].classList.add(
+        'panel-health-blink',
+      );
+    }
+  }
+
+  // проигрывает анимацию заполнения полосы здоровья слева направо
+  // в начале раунда (вызывается при получении GAME_CODES.roundStart)
+  playRoundStart() {
+    this._cancelHealthTimers();
+    this._pendingHealthTarget = null;
+
+    if (this._prefersReducedMotion()) {
+      this._healthAnimating = false;
+      return;
+    }
+
+    this._healthAnimating = true;
+    this._paintHealthBar(0, false);
+
+    this._healthDelayTimer = setTimeout(() => {
+      this._healthDelayTimer = null;
+      this._animateHealthFill();
+    }, HEALTH_FILL_DELAY_MS);
+  }
+
+  // заполняет блоки здоровья по одному до значения, полученного через update()
+  // за время задержки; если значение ещё не пришло, анимация просто не запускается
+  _animateHealthFill() {
+    const target = this._pendingHealthTarget;
+
+    if (!target) {
+      this._healthAnimating = false;
+      return;
+    }
+
+    const { blocksToShow, blink } = target;
+    const step = blocksToShow > 0 ? HEALTH_FILL_DURATION_MS / blocksToShow : 0;
+
+    for (let index = 0; index < blocksToShow; index += 1) {
+      this._healthBlockTimers.push(
+        setTimeout(() => {
+          const block = this._healthBlocks[index];
+
+          block.className = 'panel-health-block';
+          block.style.backgroundColor = this._healthBlockColors[index];
+
+          if (blink && index === blocksToShow - 1) {
+            block.classList.add('panel-health-blink');
+          }
+        }, step * index),
+      );
+    }
+
+    this._healthFillTimer = setTimeout(() => {
+      this._healthFillTimer = null;
+      this._healthAnimating = false;
+
+      // финальная перерисовка на случай, если пока шла анимация
+      // пришло более свежее значение здоровья
+      this._paintHealthBar(target.blocksToShow, target.blink);
+    }, step * blocksToShow);
+  }
+
+  _cancelHealthTimers() {
+    if (this._healthDelayTimer !== null) {
+      clearTimeout(this._healthDelayTimer);
+      this._healthDelayTimer = null;
+    }
+
+    if (this._healthFillTimer !== null) {
+      clearTimeout(this._healthFillTimer);
+      this._healthFillTimer = null;
+    }
+
+    this._healthBlockTimers.forEach(timer => clearTimeout(timer));
+    this._healthBlockTimers = [];
+  }
+
+  _prefersReducedMotion() {
+    return (
+      typeof matchMedia === 'function' &&
+      matchMedia('(prefers-reduced-motion: reduce)').matches
+    );
   }
 
   hidePanel(name) {

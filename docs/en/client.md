@@ -27,7 +27,7 @@ The purpose of the components:
 - **Controls** — keyboard capture (`InputListener`), the active key set is dictated by the server (port 17), the `chat`/`vote`/`stat` modes, sending input as `"seq:action:name"`.
 - **Game** — the rendering core: `GameCtrl.parse(name, data)` creates/updates/removes entity instances from snapshot data via `Factory`.
 - **Chat** — displaying messages (line limit, lifetime), the command line; escaping on output (`textContent`).
-- **Panel** — the HUD: round time, health, ammo, active weapon (from `'key:value'` strings).
+- **Panel** — the HUD: round time, health, ammo, active weapon (from `'key:value'` strings). On round start (`GAME_INFORM_DATA` code `roundStart`), `main.js` plays a CSS wave animation on `#logo` (`logo-round-start` class) and calls `PanelCtrl.playRoundStart()`, which fills the health bar block-by-block left to right; both respect `prefers-reduced-motion`.
 - **Stat** — the scoreboard tables with sorting (`sortList`), shown on Tab.
 - **Vote** — vote windows from templates, pagination, a lifetime timer.
 

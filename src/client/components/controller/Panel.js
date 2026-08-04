@@ -20,4 +20,9 @@ export default class PanelCtrl {
   update(dataArr) {
     this._model.update(dataArr);
   }
+
+  // проигрывает анимацию заполнения полосы здоровья в начале раунда
+  playRoundStart() {
+    this._view.playRoundStart();
+  }
 }
