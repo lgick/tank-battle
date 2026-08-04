@@ -25,4 +25,9 @@ export default class PanelCtrl {
   playRoundStart() {
     this._view.playRoundStart();
   }
+
+  // сбрасывает анимацию и последнее известное здоровье (смена карты/раунда)
+  reset() {
+    this._view.reset();
+  }
 }

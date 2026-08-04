@@ -188,6 +188,7 @@ The sound catalog. Each sound: `file` (the file name without extension in `publi
 
 - **`wsports.js`** — the registry of numeric WebSocket message ports (the source of truth). Full tables — in [network.md](network.md#ports).
 - **`opcodes.js`** — the binary snapshot format version (`SNAPSHOT_FORMAT_VERSION = 3`) and the `SNAPSHOT_KEYS` registry (`m1`, `w1`, `w2`, `w2e`, `c1`, `c2` → a numeric id + `kind`, which defines the byte layout of the block). An unregistered key will crash frame packing. Details — in [network.md](network.md#the-binary-snapshot-frame-port-5).
+- **`gamecodes.js`** — `GAME_CODES` (`winnerTeam`/`roundStart`/`gameOver`), the numeric codes sent over the `GAME_INFORM_DATA` port. Indices must match the message positions in `client.js` → `gameInform.list`. Shared between `SocketManager` (server) and `main.js` (client, to trigger the round-start logo/health animations) to avoid duplicating the magic numbers.
 
 ## src/data/ — game data
 

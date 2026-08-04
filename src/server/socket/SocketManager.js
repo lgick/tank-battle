@@ -1,3 +1,5 @@
+import { GAME_CODES } from '../../config/gamecodes.js';
+
 const TECH_CODES = {
   fullServer: [0],
   anotherDevice: [1],
@@ -5,12 +7,6 @@ const TECH_CODES = {
   kickIdle: [3],
   kickForMaxLatency: [4],
   kickForMissedPings: [5],
-};
-
-const GAME_CODES = {
-  winnerTeam: [0],
-  roundStart: [1],
-  gameOver: [2],
 };
 
 export default class SocketManager {

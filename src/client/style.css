@@ -5,6 +5,7 @@
 }
 
 #panel {
+  --logo-color: #000;
   text-transform: uppercase;
   background-color: #fff;
   text-align: center;
@@ -26,7 +27,7 @@
   top: 0;
   font-size: 12px;
   line-height: 24px;
-  color: #000;
+  color: var(--logo-color);
   width: 90px;
   height: 24px;
   margin: 0;
@@ -83,15 +84,15 @@
   background-size: 300% 100%;
   background-image: linear-gradient(
     to right,
-    #000 0%,
-    #000 33.3%,
+    var(--logo-color) 0%,
+    var(--logo-color) 33.3%,
     rgb(255, 50, 50) 38%,
     rgb(255, 165, 0) 44%,
     rgb(255, 255, 0) 50%,
     rgb(50, 205, 50) 56%,
     rgb(0, 220, 220) 62%,
-    #000 66.6%,
-    #000 100%
+    var(--logo-color) 66.6%,
+    var(--logo-color) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -110,8 +111,8 @@
 @media (prefers-reduced-motion: reduce) {
   #logo.logo-round-start {
     animation: none;
-    color: inherit;
-    -webkit-text-fill-color: inherit;
+    color: var(--logo-color);
+    -webkit-text-fill-color: var(--logo-color);
     background-image: none;
   }
 }

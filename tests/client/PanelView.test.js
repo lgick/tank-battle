@@ -100,23 +100,17 @@ describe('PanelView.playRoundStart', () => {
     vi.useRealTimers();
   });
 
-  it('обнуляет полосу здоровья и заполняет её блоками к концу анимации', () => {
+  it('заполняет полосу значением, пришедшим ДО roundStart (порядок сервера)', () => {
     window.matchMedia = vi.fn().mockReturnValue({ matches: false });
     vi.useFakeTimers();
 
     const view = new PanelView(makeModel(), elems);
 
+    // sendPlayerDefaultShot (панель) приходит раньше sendRoundStart
+    view.update({ name: 'health', value: 100 });
     view.playRoundStart();
 
     let blocks = [...document.querySelectorAll('#panel-health div div')];
-    expect(
-      blocks.every(b => b.className === 'panel-health-block-empty'),
-    ).toBe(true);
-
-    // значение здоровья, пришедшее во время анимации, не должно её перебивать
-    view.update({ name: 'health', value: 100 });
-
-    blocks = [...document.querySelectorAll('#panel-health div div')];
     expect(
       blocks.every(b => b.className === 'panel-health-block-empty'),
     ).toBe(true);
@@ -126,6 +120,71 @@ describe('PanelView.playRoundStart', () => {
     blocks = [...document.querySelectorAll('#panel-health div div')];
     const filled = blocks.filter(b => b.className === 'panel-health-block');
     expect(filled.length).toBe(30);
+  });
+
+  it('обновление здоровья во время анимации не перебивает её, пока не упало ниже цели', () => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+    vi.useFakeTimers();
+
+    const view = new PanelView(makeModel(), elems);
+
+    view.update({ name: 'health', value: 100 });
+    view.playRoundStart();
+
+    // такое же значение — анимация продолжается
+    view.update({ name: 'health', value: 100 });
+
+    let blocks = [...document.querySelectorAll('#panel-health div div')];
+    expect(
+      blocks.every(b => b.className === 'panel-health-block-empty'),
+    ).toBe(true);
+
+    vi.advanceTimersByTime(1000);
+
+    blocks = [...document.querySelectorAll('#panel-health div div')];
+    const filled = blocks.filter(b => b.className === 'panel-health-block');
+    expect(filled.length).toBe(30);
+  });
+
+  it('реальный урон во время анимации прерывает её и рисует факт немедленно', () => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+    vi.useFakeTimers();
+
+    const view = new PanelView(makeModel(), elems);
+
+    view.update({ name: 'health', value: 100 });
+    view.playRoundStart();
+
+    // игрока подбили в первую секунду раунда
+    view.update({ name: 'health', value: 60 });
+
+    const blocks = [...document.querySelectorAll('#panel-health div div')];
+    const filled = blocks.filter(b => b.className === 'panel-health-block');
+    expect(filled.length).toBe(18); // ceil(60/100 * 30)
+
+    // финальный таймер анимации не должен затем перерисовать поверх
+    vi.advanceTimersByTime(1000);
+
+    const blocksAfter = [
+      ...document.querySelectorAll('#panel-health div div'),
+    ];
+    expect(
+      blocksAfter.filter(b => b.className === 'panel-health-block').length,
+    ).toBe(18);
+  });
+
+  it('без ранее известного здоровья анимацию не запускает и не трогает полосу', () => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+
+    const view = new PanelView(makeModel(), elems);
+
+    const before = document.getElementById('panel-health').innerHTML;
+
+    view.playRoundStart();
+
+    // playRoundStart без предшествующего update() возвращается рано,
+    // не перекрашивая полосу здоровья в 0
+    expect(document.getElementById('panel-health').innerHTML).toBe(before);
   });
 
   it('при prefers-reduced-motion не запускает анимацию и применяет update сразу', () => {
@@ -139,6 +198,39 @@ describe('PanelView.playRoundStart', () => {
     const blocks = [...document.querySelectorAll('#panel-health div div')];
     const filled = blocks.filter(b => b.className === 'panel-health-block');
     expect(filled.length).toBe(15);
+  });
+});
+
+describe('PanelView.reset', () => {
+  it('прерывает анимацию и забывает последнее известное здоровье', () => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+    vi.useFakeTimers();
+
+    const view = new PanelView(makeModel(), elems);
+
+    view.update({ name: 'health', value: 100 });
+    view.playRoundStart();
+    view.reset();
+
+    vi.advanceTimersByTime(1000);
+
+    const blocks = [...document.querySelectorAll('#panel-health div div')];
+    expect(
+      blocks.every(b => b.className === 'panel-health-block-empty'),
+    ).toBe(true);
+
+    // после reset playRoundStart без нового update ничего не анимирует
+    view.playRoundStart();
+    vi.advanceTimersByTime(1000);
+
+    const blocksAfter = [
+      ...document.querySelectorAll('#panel-health div div'),
+    ];
+    expect(
+      blocksAfter.every(b => b.className === 'panel-health-block-empty'),
+    ).toBe(true);
+
+    vi.useRealTimers();
   });
 });
 

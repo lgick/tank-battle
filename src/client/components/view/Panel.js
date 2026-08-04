@@ -1,5 +1,6 @@
 import Publisher from '../../../lib/Publisher.js';
 import { lerp } from '../../../lib/math.js';
+import { prefersReducedMotion } from '../../../lib/motion.js';
 
 // Singleton PanelView
 
@@ -36,7 +37,7 @@ export default class PanelView {
     this._emptyBlockColor = '#888'; // цвет пустых блоков
 
     this._healthAnimating = false; // идёт анимация заполнения (playRoundStart)
-    this._pendingHealthTarget = null; // {blocksToShow, blink}, ждёт конца анимации
+    this._healthTarget = null; // {blocksToShow, blink} — последнее известное значение здоровья
     this._healthDelayTimer = null;
     this._healthFillTimer = null;
     this._healthBlockTimers = [];
@@ -119,12 +120,18 @@ export default class PanelView {
       const blocksToShow = Math.ceil((value / 100) * this._totalHealthBlocks);
       const exactBlocks = (value / 100) * this._totalHealthBlocks;
       const blink = value > 0 && exactBlocks % 1 !== 0;
+      const prevTarget = this._healthTarget;
 
-      // во время анимации заполнения (playRoundStart) значение откладывается
-      // и применяется по завершении, чтобы не перебивать анимацию
-      if (this._healthAnimating) {
-        this._pendingHealthTarget = { blocksToShow, blink };
-      } else {
+      // всегда актуально: панель может прийти как до, так и во время
+      // анимации заполнения (playRoundStart), порядок с сервера не гарантирован
+      this._healthTarget = { blocksToShow, blink };
+
+      if (!this._healthAnimating) {
+        this._paintHealthBar(blocksToShow, blink);
+      } else if (!prevTarget || blocksToShow < prevTarget.blocksToShow) {
+        // реальное падение здоровья важнее декоративной анимации заполнения
+        this._cancelHealthTimers();
+        this._healthAnimating = false;
         this._paintHealthBar(blocksToShow, blink);
       }
     } else {
@@ -154,12 +161,17 @@ export default class PanelView {
   }
 
   // проигрывает анимацию заполнения полосы здоровья слева направо
-  // в начале раунда (вызывается при получении GAME_CODES.roundStart)
+  // в начале раунда (вызывается при получении GAME_CODES.roundStart);
+  // целью анимации служит последнее известное значение здоровья — панель
+  // с 'h:' приходит раньше roundStart и уже осела в this._healthTarget
   playRoundStart() {
     this._cancelHealthTimers();
-    this._pendingHealthTarget = null;
 
-    if (this._prefersReducedMotion()) {
+    if (
+      prefersReducedMotion() ||
+      !this._healthTarget ||
+      this._panels.health.style.display === 'none'
+    ) {
       this._healthAnimating = false;
       return;
     }
@@ -173,17 +185,9 @@ export default class PanelView {
     }, HEALTH_FILL_DELAY_MS);
   }
 
-  // заполняет блоки здоровья по одному до значения, полученного через update()
-  // за время задержки; если значение ещё не пришло, анимация просто не запускается
+  // заполняет блоки здоровья по одному до this._healthTarget за время задержки
   _animateHealthFill() {
-    const target = this._pendingHealthTarget;
-
-    if (!target) {
-      this._healthAnimating = false;
-      return;
-    }
-
-    const { blocksToShow, blink } = target;
+    const { blocksToShow, blink } = this._healthTarget;
     const step = blocksToShow > 0 ? HEALTH_FILL_DURATION_MS / blocksToShow : 0;
 
     for (let index = 0; index < blocksToShow; index += 1) {
@@ -205,9 +209,13 @@ export default class PanelView {
       this._healthFillTimer = null;
       this._healthAnimating = false;
 
-      // финальная перерисовка на случай, если пока шла анимация
-      // пришло более свежее значение здоровья
-      this._paintHealthBar(target.blocksToShow, target.blink);
+      // финальная перерисовка актуальным значением: если пока шла анимация
+      // пришло более свежее (но не меньшее — иначе update() уже прервал бы
+      // анимацию) значение здоровья, this._healthTarget уже обновлён
+      this._paintHealthBar(
+        this._healthTarget.blocksToShow,
+        this._healthTarget.blink,
+      );
     }, step * blocksToShow);
   }
 
@@ -226,11 +234,12 @@ export default class PanelView {
     this._healthBlockTimers = [];
   }
 
-  _prefersReducedMotion() {
-    return (
-      typeof matchMedia === 'function' &&
-      matchMedia('(prefers-reduced-motion: reduce)').matches
-    );
+  // прерывает анимацию заполнения здоровья и забывает последнее известное
+  // значение (смена карты/раунда, переход в спектаторы)
+  reset() {
+    this._cancelHealthTimers();
+    this._healthAnimating = false;
+    this._healthTarget = null;
   }
 
   hidePanel(name) {

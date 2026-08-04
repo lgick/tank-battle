@@ -22,4 +22,10 @@ describe('PanelCtrl', () => {
     new PanelCtrl({}, view).playRoundStart();
     expect(view.playRoundStart).toHaveBeenCalled();
   });
+
+  it('reset проксируется в view', () => {
+    const view = { publisher: new Publisher(), reset: vi.fn() };
+    new PanelCtrl({}, view).reset();
+    expect(view.reset).toHaveBeenCalled();
+  });
 });

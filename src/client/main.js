@@ -37,6 +37,8 @@ import ShotPredictor from './ShotPredictor.js';
 import BakingProvider from './providers/BakingProvider.js';
 import DependencyProvider from './providers/DependencyProvider.js';
 import wsports from '../config/wsports.js';
+import { GAME_CODES } from '../config/gamecodes.js';
+import { playLogoRoundStart } from './logoAnimation.js';
 import parts from './parts/index.js';
 
 // PS (server ports): порты получения данные от сервера
@@ -88,11 +90,6 @@ const apps = {};
 
 let gameInformer = null;
 let gameInformList = []; // массив игровых сообщений
-let logoAnimationEndHandler = null; // текущий слушатель animationend логотипа
-
-// код GAME_CODES.roundStart (src/server/socket/SocketManager.js) — совпадает
-// с индексом 'ROUND START!' в gameInform.list (src/config/client.js)
-const GAME_ROUND_START_CODE = 1;
 
 const techInformer = document.getElementById('tech-informer');
 let techInformList = []; // массив системных сообщений
@@ -377,7 +374,7 @@ socketMethods[PS_GAME_INFORM_DATA] = data => {
       gameInformer.style.display = 'none';
     }, 3000);
 
-    if (key === GAME_ROUND_START_CODE) {
+    if (key === GAME_CODES.roundStart[0]) {
       playLogoRoundStart();
       modules.panel?.playRoundStart();
     }
@@ -444,6 +441,7 @@ socketMethods[PS_CLEAR] = function (setIdList) {
   predictor?.reset();
   shotPredictor?.reset();
   soundManager.reset();
+  modules.panel?.reset();
 };
 
 // console
@@ -452,34 +450,6 @@ socketMethods[PS_CONSOLE] = data => {
 };
 
 // ФУНКЦИИ
-
-// проигрывает волновую анимацию логотипа в начале раунда; логотип статичен
-// (задаётся в разметке) и не относится к модулю Panel, поэтому управляется
-// напрямую отсюда
-function playLogoRoundStart() {
-  const logo = document.getElementById('logo');
-
-  if (!logo) {
-    return;
-  }
-
-  if (logoAnimationEndHandler) {
-    logo.removeEventListener('animationend', logoAnimationEndHandler);
-  }
-
-  logo.classList.remove('logo-round-start');
-  void logo.offsetWidth; // reflow: перезапускает анимацию при повторном раунде
-  logo.classList.add('logo-round-start');
-
-  logoAnimationEndHandler = () => {
-    logo.classList.remove('logo-round-start');
-    logoAnimationEndHandler = null;
-  };
-
-  logo.addEventListener('animationend', logoAnimationEndHandler, {
-    once: true,
-  });
-}
 
 // применяет игровые данные к сущностям
 function applyGameData(game) {
