@@ -330,7 +330,8 @@ socketMethods[PS_FIRST_SHOT_DATA] = data => {
 
 // panel data
 socketMethods[PS_PANEL_DATA] = data => {
-  modules.panel.update(data);
+  // мета может прийти до сборки модулей (createUser синхронен, init — нет)
+  modules.panel?.update(data);
   shotPredictor?.syncPanel(data);
 };
 
@@ -351,7 +352,7 @@ socketMethods[PS_VOTE_DATA] = data => {
 
 // keyset data (смена режима спектатор/игрок)
 socketMethods[PS_KEYSET_DATA] = keySet => {
-  modules.controls.changeKeySet(keySet);
+  modules.controls?.changeKeySet(keySet);
   predictor?.setActive(keySet === 1);
   shotPredictor?.reset();
 };

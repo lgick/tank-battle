@@ -214,23 +214,17 @@ class Game {
     }
   }
 
-  // удаляет всех игроков и возвращает список удаленных моделей (игроков, дыма)
+  // удаляет всех игроков (тела из мира + данные); список ключей для очистки
+  // клиента собирает removePlayersAndShots из всех моделей, а не из живых
   _removePlayers() {
-    const modelNameSet = new Set();
-
     for (const gameId in this._playersData) {
       if (Object.hasOwn(this._playersData, gameId)) {
-        const player = this._playersData[gameId];
-
-        modelNameSet.add(player.model);
-        this._world.removeRigidBody(player.getBody());
+        this._world.removeRigidBody(this._playersData[gameId].getBody());
       }
     }
 
     this._playersData = {};
     this._cachedPlayersData = {};
-
-    return [...modelNameSet];
   }
 
   // меняет имя игрока
