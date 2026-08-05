@@ -104,6 +104,9 @@ export default class TankPredictor {
   // из следующего player-блока без replay
   reset() {
     this._pendingReset = true;
+    this._hasState = false;
+    this._state = null;
+    this._frozen = false;
     this._history = [];
     this._baseKeysMask = 0;
     this._keysMask = 0; // сервер сбрасывает клавиши при респауне (resetKeys)

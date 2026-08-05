@@ -211,4 +211,24 @@ describe('TankPredictor: reconciliation', () => {
     expect(predictor._state.x).toBe(7);
     expect(predictor._visualError.x).toBe(0);
   });
+
+  it('reset обнуляет состояние: до нового player-блока рендерить нечего', () => {
+    predictor._state.x = 99;
+    predictor.freeze(true);
+    predictor.reset();
+
+    expect(predictor.hasState).toBe(false);
+    expect(predictor.getRenderState()).toBeNull();
+    expect(predictor._frozen).toBe(false);
+
+    predictor.onServerState(
+      { state: [7, 8, 0, 0, 0, 0, 0, 0], centering: false },
+      0,
+      0,
+      0,
+    );
+
+    expect(predictor.hasState).toBe(true);
+    expect(predictor.getRenderState().x).toBe(7);
+  });
 });

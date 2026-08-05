@@ -258,7 +258,7 @@ socketMethods[PS_MAP_DATA] = data => {
   const { scale, layers, map, step, setId, spriteSheet, physicsStatic } = data;
 
   interpolator.reset();
-  predictor?.reset();
+  resetOwnTank();
   shotPredictor?.setMap(data);
 
   // удаление данных карт
@@ -438,7 +438,7 @@ socketMethods[PS_CLEAR] = function (setIdList) {
   }
 
   interpolator.reset();
-  predictor?.reset();
+  resetOwnTank();
   shotPredictor?.reset();
   soundManager.reset();
   modules.panel?.reset();
@@ -450,6 +450,13 @@ socketMethods[PS_CONSOLE] = data => {
 };
 
 // ФУНКЦИИ
+
+// сброс своего танка: сущность на полотне уничтожена, id и мета невалидны
+function resetOwnTank() {
+  myGameId = null;
+  myTankMeta = null;
+  predictor?.reset();
+}
 
 // применяет игровые данные к сущностям
 function applyGameData(game) {

@@ -188,6 +188,49 @@ describe('RoundManager._checkTeamWipe', () => {
   });
 });
 
+describe('RoundManager.createMap', () => {
+  it('переводит людей в наблюдатели с keySet 0 до отправки карты', () => {
+    const calls = [];
+    const users = {
+      u: { gameId: 'u', teamId: 1, socketId: 'su', isNetworked: true },
+    };
+    const participants = fakeParticipants(users);
+
+    participants.resetTeamSizes = vi.fn();
+    participants.clearActive = vi.fn();
+    participants.addToTeam = vi.fn();
+
+    const rm = makeRm({
+      participants,
+      maps: { m1: { step: 10, respawns: {}, physicsDynamic: [] } },
+      game: { clear: vi.fn(), createMap: vi.fn() },
+      panel: { reset: vi.fn() },
+      stat: { reset: vi.fn(), moveUser: vi.fn() },
+      voteCoordinator: { reset: vi.fn() },
+      snapshotManager: { reset: vi.fn() },
+      timerManager: { stopGameTimers: vi.fn(), startGameTimers: vi.fn() },
+      bots: {
+        createMap: vi.fn(),
+        getBotCountsPerTeam: () => ({}),
+        removeBots: vi.fn(),
+        clearSpatialGrid: vi.fn(),
+        createBots: vi.fn(),
+      },
+      socketManager: {
+        sendClear: () => calls.push('clear'),
+        sendSpectatorDefaultShot: () => calls.push('keySet0'),
+        sendTechInform: vi.fn(),
+        sendMap: () => calls.push('map'),
+      },
+    });
+
+    rm.createMap();
+
+    expect(calls).toEqual(['clear', 'keySet0', 'map']);
+    expect(users.u.status).toBe('spectator');
+  });
+});
+
 describe('RoundManager._getMapList: пагинация', () => {
   it('возвращает весь список, если он не длиннее лимита', () => {
     const rm = makeRm({ mapList: ['m1', 'm2'], mapsInVote: 3 });

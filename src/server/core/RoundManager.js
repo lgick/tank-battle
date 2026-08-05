@@ -134,6 +134,10 @@ class RoundManager {
 
       this._participants.addToTeam(gameId, this._spectatorTeam);
 
+      // keySet наблюдателя сразу: до загрузки новой карты клиент иначе
+      // считает себя играющим и воскрешает свой танк предиктом
+      this._socketManager.sendSpectatorDefaultShot(user.socketId);
+
       this.sendMap(gameId);
     }
 

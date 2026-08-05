@@ -75,7 +75,7 @@ Each snapshot tick (`networkSendRate: 4` → 30 packets/sec) the server sends a 
 - **stat (14)** — broadcast, a delta of changes (format below).
 - **chat (15)** — a broadcast message or a personal one (`shiftByUser`).
 - **vote (16)** — a broadcast vote or a personal one.
-- **keyset (17)** — pointwise on a spectator↔player status change.
+- **keyset (17)** — pointwise on a spectator↔player status change. On a map change the server sends the spectator keySet (`0`) together with an empty panel **immediately**, right after `CLEAR` and before `MAP_DATA` — otherwise the client keeps considering itself a player while the new map is loading and resurrects its own tank through prediction.
 
 ## The binary snapshot frame (port 5)
 

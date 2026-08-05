@@ -227,6 +227,42 @@ describe('Интеграция: смена карты одиночным гол�
     expect(socket.framesOf('sendClear').length).toBeGreaterThan(0);
     expect(socket.framesOf('sendMap').length).toBeGreaterThan(0);
   });
+
+  it('порядок на проводе: clear → keySet наблюдателя → карта', async () => {
+    const gameId = await connectPlayer(vimp, { socketId: 's1' });
+    const current = vimp._roundManager.currentMap;
+    const other = vimp._mapList.find(m => m !== current);
+    socket.clear();
+
+    vimp.parseVote(gameId, ['mapChange', other]);
+
+    const order = socket.frames
+      .filter(f => f.socketId === 's1')
+      .map(f => f.method)
+      .filter(m =>
+        ['sendClear', 'sendSpectatorDefaultShot', 'sendMap'].includes(m),
+      );
+
+    expect(order.slice(0, 3)).toEqual([
+      'sendClear',
+      'sendSpectatorDefaultShot',
+      'sendMap',
+    ]);
+  });
+
+  it('clear-список нового раунда содержит m1 на пустом мире', async () => {
+    await connectPlayer(vimp, { socketId: 's1' });
+    socket.clear();
+
+    vimp._roundManager._startRound();
+
+    const withList = socket
+      .framesOf('sendClear')
+      .filter(f => Array.isArray(f.args[0]));
+
+    expect(withList.length).toBeGreaterThan(0);
+    expect(withList[0].args[0]).toContain('m1');
+  });
 });
 
 describe('Интеграция: idle-кик и дисконнект', () => {

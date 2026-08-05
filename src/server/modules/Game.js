@@ -731,13 +731,14 @@ class Game {
   }
 
   // удаляет данные игроков и пуль и возвращает список удалённых имён;
-  // все ключи оружий включаются всегда — клиент должен чистить и те,
-  // по которым на сервере не было живых снарядов (zombie-prediction)
+  // все ключи моделей и оружий включаются всегда — клиент должен чистить и те,
+  // по которым на сервере не было живых сущностей (zombie-prediction)
   removePlayersAndShots() {
+    this._removePlayers();
     this._removeShots();
 
     return [
-      ...this._removePlayers(),
+      ...Object.keys(this._models),
       ...Object.keys(this._weapons),
       ...this._weaponEffectList,
     ];

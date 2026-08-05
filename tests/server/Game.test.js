@@ -374,6 +374,16 @@ describe('Game: очистка мира и снарядов', () => {
     expect(game._playersData).toEqual({});
   });
 
+  it('removePlayersAndShots включает m1 и при пустом _playersData', () => {
+    const game = makeGame();
+    game._playersData = {};
+
+    const removed = game.removePlayersAndShots();
+
+    // после clear живых игроков нет, но клиент должен снести zombie-предикт
+    expect(removed).toContain('m1');
+  });
+
   it('clear сбрасывает аккумулятор и данные', () => {
     const game = makeGame();
     game._accumulator = 0.05;
