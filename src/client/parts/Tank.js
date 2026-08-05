@@ -178,7 +178,11 @@ export default class Tank extends Container {
 
     // обновление звуковой логики
     if (this._soundId && this._condition > 0) {
-      // регистрация могла быть снята SoundManager.reset() — перерегистрируемся
+      // Регистрация могла быть снята SoundManager.reset() — перерегистрируемся.
+      // Опирается на инвариант: loop-звуки из реестра не вытесняются
+      // (ни по дистанции, ни по лимиту голосов), иначе будет
+      // перерегистрация каждый кадр. Инвариант закреплён тестом
+      // «далёкий loop-звук остаётся в реестре».
       const alive = this._soundManager.updateSoundData(
         this._soundId,
         this._getSoundData(),

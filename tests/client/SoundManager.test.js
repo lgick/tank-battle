@@ -76,6 +76,21 @@ describe('SoundManager.processAudibility', () => {
     expect(ctx._internalStop).toHaveBeenCalledWith('oldId');
   });
 
+  // Инвариант, на который опирается перерегистрация звука в parts/Tank.js:
+  // loop-звук не вытесняется из реестра — ни по дистанции, ни по лимиту голосов.
+  it('сохраняет в реестре loop-звук, не попавший в лимит голосов', () => {
+    const sounds = [
+      ...Array.from({ length: 30 }, (_, i) => snd(`hi${i}`, 10, 100)),
+      snd('engine', 900, 1, { loop: true }),
+    ];
+    const ctx = makeCtx(sounds);
+    ctx._cleanupUnplayedOneShots = SoundManager.prototype._cleanupUnplayedOneShots;
+    ctx.processAudibility();
+
+    expect(ctx._registeredSounds.has('engine')).toBe(true);
+    expect(ctx._registeredSounds.get('engine').activeSoundId).toBe(null);
+  });
+
   it('без кандидатов очищает одноразовые звуки', () => {
     const ctx = makeCtx([]);
     ctx.processAudibility();

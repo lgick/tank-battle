@@ -58,7 +58,7 @@ The purpose of the components:
 
 [src/client/OwnTank.js](../../src/client/OwnTank.js) — the own tank's bookkeeping, extracted from `main.js`:
 
-- holds the identity (`gameId` from the frame's player block, the model name from the auth form) and the discrete snapshot fields the predicted state does not carry (`condition`/`armor`/`bullets`);
+- holds the identity (`gameId` from the frame's player block, the model name from the auth form) and the discrete snapshot fields the predicted state does not carry (`condition`/`size`/`teamId`);
 - `track(frame)` — per crossed frame: resets prediction on `camera[2]`, refreshes the meta, freezes prediction on `condition 0`, drops the meta when the tank leaves the canvas;
 - `getRenderData()` — `null` or `{ game, position }` for `renderTick`: the ghost barrier lives here, the result is `null` while there is no predicted state or the identity/meta are cleared;
 - `canFire()` — the fire gate of `ShotPredictor.tryFire` (a predicted state and a living tank);

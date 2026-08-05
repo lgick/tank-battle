@@ -1,5 +1,5 @@
 // Бухгалтерия своего танка: идентичность (gameId + модель) и дискретные поля
-// из снапшота (condition/armor/bullets), которых нет в предсказанном состоянии.
+// из снапшота (condition/size/teamId), которых нет в предсказанном состоянии.
 //
 // Один барьер против «призрака»: пока идентичность или мета сброшены
 // (смена карты, clear), getRenderData() отдаёт null — предсказанное состояние
@@ -13,7 +13,7 @@ export default class OwnTank {
     this._predictor = predictor;
     this._gameId = null;
     this._modelName = null; // из формы авторизации
-    this._meta = null; // [condition, armor, bullets] последнего снапшота
+    this._meta = null; // [condition, size, teamId] последнего снапшота
   }
 
   // id своего танка (для filterServerSnapshot и tryFire)

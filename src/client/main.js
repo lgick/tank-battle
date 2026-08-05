@@ -756,7 +756,7 @@ ws.onmessage = e => {
       interpolator.push(frame.snapshot, frame.camera, frame.serverTime, now);
 
       // authoritative-состояние своего танка → reconciliation предикшена
-      if (frame.player && predictor) {
+      if (frame.player && ownTank) {
         ownTank.setGameId(frame.player.gameId);
         predictor.onServerState(
           frame.player,
