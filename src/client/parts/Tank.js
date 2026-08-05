@@ -178,7 +178,16 @@ export default class Tank extends Container {
 
     // обновление звуковой логики
     if (this._soundId && this._condition > 0) {
-      this._soundManager.updateSoundData(this._soundId, this._getSoundData());
+      // регистрация могла быть снята SoundManager.reset() — перерегистрируемся
+      const alive = this._soundManager.updateSoundData(
+        this._soundId,
+        this._getSoundData(),
+      );
+
+      if (!alive) {
+        this._soundId = null;
+        this._initSounds();
+      }
     }
 
     const newCondition = data[7];

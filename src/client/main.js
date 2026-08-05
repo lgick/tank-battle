@@ -34,6 +34,7 @@ import SoundManager from './SoundManager.js';
 import SnapshotInterpolator from './SnapshotInterpolator.js';
 import TankPredictor from './TankPredictor.js';
 import ShotPredictor from './ShotPredictor.js';
+import OwnTank from './OwnTank.js';
 import BakingProvider from './providers/BakingProvider.js';
 import DependencyProvider from './providers/DependencyProvider.js';
 import wsports from '../config/wsports.js';
@@ -109,9 +110,9 @@ let predictor = null;
 // визуальный спавн снарядов своего танка (создаётся при получении конфига)
 let shotPredictor = null;
 let inputSeq = 0; // номер отправленного ввода (KEYS_DATA)
-let myGameId = null; // id своего танка (из player-блока кадра)
-let myModelName = null; // модель своего танка (из формы авторизации)
-let myTankMeta = null; // последние дискретные поля своего танка из снапшота
+
+// идентичность и дискретные поля своего танка (создаётся вместе с предиктором)
+let ownTank = null;
 
 // SOCKET МЕТОДЫ
 
@@ -126,6 +127,7 @@ socketMethods[PS_CONFIG_DATA] = async data => {
   if (data.prediction) {
     predictor = new TankPredictor(data.prediction);
     shotPredictor = new ShotPredictor(data.prediction);
+    ownTank = new OwnTank(predictor);
   }
 
   // инициализация сущностей игры
@@ -222,7 +224,7 @@ socketMethods[PS_AUTH_DATA] = data => {
 
   authModel.publisher.on('socket', data => {
     // модель танка пользователя — для реплик движения и выстрелов
-    myModelName = data.model;
+    ownTank?.setModel(data.model);
     predictor?.setModel(data.model);
     shotPredictor?.setModel(data.model);
 
@@ -258,7 +260,7 @@ socketMethods[PS_MAP_DATA] = data => {
   const { scale, layers, map, step, setId, spriteSheet, physicsStatic } = data;
 
   interpolator.reset();
-  resetOwnTank();
+  ownTank?.reset();
   shotPredictor?.setMap(data);
 
   // удаление данных карт
@@ -439,7 +441,7 @@ socketMethods[PS_CLEAR] = function (setIdList) {
   }
 
   interpolator.reset();
-  resetOwnTank();
+  ownTank?.reset();
   shotPredictor?.reset();
   soundManager.reset();
   modules.panel?.reset();
@@ -451,13 +453,6 @@ socketMethods[PS_CONSOLE] = data => {
 };
 
 // ФУНКЦИИ
-
-// сброс своего танка: сущность на полотне уничтожена, id и мета невалидны
-function resetOwnTank() {
-  myGameId = null;
-  myTankMeta = null;
-  predictor?.reset();
-}
 
 // применяет игровые данные к сущностям
 function applyGameData(game) {
@@ -484,32 +479,6 @@ function applyShot(game, camera) {
   applyCamera(camera);
 }
 
-// отслеживает свой танк в дискретном кадре: дискретные поля для предикшена,
-// заморозка при уничтожении, сброс предикта при reset камеры
-function trackOwnTank(frame) {
-  if (!predictor) {
-    return;
-  }
-
-  // reset камеры (respawn/телепорт/смена наблюдения) → сброс предсказания
-  if (frame.camera !== 0 && frame.camera[2] === true) {
-    predictor.reset();
-  }
-
-  if (myGameId === null || !myModelName) {
-    return;
-  }
-
-  const ownData = frame.game[myModelName]?.[myGameId];
-
-  if (ownData === null) {
-    myTankMeta = null; // танк удалён с полотна
-  } else if (ownData) {
-    myTankMeta = [ownData[7], ownData[8], ownData[9]];
-    predictor.freeze(ownData[7] === 0); // танк уничтожен — предикт заморожен
-  }
-}
-
 // рендер-тик: проигрывает пересечённые кадры (события, создания/удаления),
 // применяет интерполированные позиции/камеру и перекрывает свой танк
 // предсказанным состоянием
@@ -520,11 +489,15 @@ function renderTick() {
   shotPredictor?.setServerOffset(interpolator.offset);
 
   frames.forEach(frame => {
-    trackOwnTank(frame);
+    ownTank?.track(frame);
 
     // серверные дубли локально заспавненных выстрелов подавляются
     const frameGame = shotPredictor
-      ? shotPredictor.filterServerSnapshot(frame.game, myGameId, now)
+      ? shotPredictor.filterServerSnapshot(
+          frame.game,
+          ownTank?.gameId ?? null,
+          now,
+        )
       : frame.game;
 
     applyShot(frameGame, frame.camera);
@@ -538,27 +511,12 @@ function renderTick() {
 
   predictor?.update(now);
 
-  const predicted = predictor?.getRenderState() ?? null;
+  const own = ownTank?.getRenderData() ?? null;
 
-  if (predicted && myGameId !== null && myTankMeta) {
+  if (own) {
     // свой танк рендерится предсказанным состоянием поверх интерполяции
-    applyGameData({
-      [myModelName]: {
-        [myGameId]: [
-          predicted.x,
-          predicted.y,
-          predicted.angle,
-          predicted.gunRotation,
-          predicted.vx,
-          predicted.vy,
-          predicted.engineLoad,
-          ...myTankMeta,
-        ],
-      },
-    });
-
-    // камера следует предсказанному танку (reset/shake — дискретными кадрами)
-    applyCamera([predicted.x, predicted.y]);
+    applyGameData(own.game);
+    applyCamera(own.position);
   } else {
     applyCamera(camera);
   }
@@ -705,18 +663,12 @@ function runModules(data) {
     predictor?.applyInput(action, name, now);
 
     // визуальный спавн своего выстрела и локальная смена оружия
-    // (только живой танк: myTankMeta[0] — condition)
-    if (
-      action === 'down' &&
-      shotPredictor &&
-      predictor?.hasState &&
-      myTankMeta &&
-      myTankMeta[0] !== 0
-    ) {
+    // (только живой танк)
+    if (action === 'down' && shotPredictor && ownTank?.canFire()) {
       if (name === 'fire') {
         const spawn = shotPredictor.tryFire(
           predictor.getRenderState(),
-          myGameId,
+          ownTank.gameId,
           now,
         );
 
@@ -805,7 +757,7 @@ ws.onmessage = e => {
 
       // authoritative-состояние своего танка → reconciliation предикшена
       if (frame.player && predictor) {
-        myGameId = frame.player.gameId;
+        ownTank.setGameId(frame.player.gameId);
         predictor.onServerState(
           frame.player,
           frame.serverTime,

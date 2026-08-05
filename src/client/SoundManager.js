@@ -199,13 +199,19 @@ export default class SoundManager {
    * Обновляет параметры зарегистрированного звука.
    * @param {symbol} id - ID, полученный от `registerSound`.
    * @param {object} data - Новые параметры.
+   * @returns {boolean} false, если регистрация не найдена (например, снята
+   *   `reset()`) — владелец звука может перерегистрироваться.
    */
   updateSoundData(id, data) {
     const sound = this._registeredSounds.get(id);
 
-    if (sound) {
-      Object.assign(sound, data);
+    if (!sound) {
+      return false;
     }
+
+    Object.assign(sound, data);
+
+    return true;
   }
 
   /**

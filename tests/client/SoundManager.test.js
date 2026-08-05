@@ -193,8 +193,29 @@ describe('SoundManager.updateSoundData', () => {
     expect(reg.volume).toBe(0.3);
   });
 
-  it('игнорирует неизвестный id без ошибки', () => {
+  it('возвращает true для зарегистрированного звука', () => {
+    const ctx = makeRegistryCtx(
+      new Map([['s', { sound: {}, config: { priority: 50 } }]]),
+    );
+    const id = ctx.registerSound('s', { position: { x: 0, y: 0 } });
+
+    expect(ctx.updateSoundData(id, { volume: 0.5 })).toBe(true);
+  });
+
+  it('игнорирует неизвестный id без ошибки и возвращает false', () => {
     const ctx = makeRegistryCtx();
     expect(() => ctx.updateSoundData(Symbol('x'), { volume: 1 })).not.toThrow();
+    expect(ctx.updateSoundData(Symbol('x'), { volume: 1 })).toBe(false);
+  });
+
+  it('после снятия регистрации возвращает false (сценарий reset)', () => {
+    const ctx = makeRegistryCtx(
+      new Map([['s', { sound: {}, config: { priority: 50 } }]]),
+    );
+    const id = ctx.registerSound('s', { position: { x: 0, y: 0 } });
+
+    ctx._registeredSounds.clear();
+
+    expect(ctx.updateSoundData(id, { volume: 0.5 })).toBe(false);
   });
 });

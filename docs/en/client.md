@@ -50,9 +50,19 @@ The purpose of the components:
 - **reconciliation**: from the frame's player block (`gameId`, `lastInputSeq`, the exact state) state := server → replay the input history from the frame's `serverTime` up to the estimate of the server "now"; the discrepancy goes into `visualError` and fades exponentially (a snap on a large discrepancy);
 - rendering: the predicted state overrides interpolation through the same `parse` pipeline, the camera follows the predicted position;
 - resets: `camera[2]` (respawn/teleport), a keySet change, a map change; on `condition 0` (death) prediction is frozen;
-- `reset()` clears the state **completely** (including `hasState`/`state`/`frozen`) — there is nothing to render until the next player block arrives. On `CLEAR` and `MAP_DATA` the own-tank identity is cleared alongside it (`myGameId`/`myTankMeta` in `main.js`, helper `resetOwnTank()`); otherwise prediction would resurrect the tank on an already-cleared canvas (together with a looping engine sound).
+- `reset()` clears the state **completely** (including `hasState`/`state`/`frozen`) — there is nothing to render until the next player block arrives. On `CLEAR` and `MAP_DATA` the own-tank identity is cleared alongside it (`OwnTank.reset()`); otherwise prediction would resurrect the tank on an already-cleared canvas (together with a looping engine sound).
 
 ⚠️ The replica's accuracy is fixed by the parity test `tests/server/TankPredictorParity.test.js` (real Rapier against the replica). Integration order (empirical, fixed by the test): impulses → integrating positions by velocity before damping → damping `v *= 1/(1+dt·d)`.
+
+### OwnTank
+
+[src/client/OwnTank.js](../../src/client/OwnTank.js) — the own tank's bookkeeping, extracted from `main.js`:
+
+- holds the identity (`gameId` from the frame's player block, the model name from the auth form) and the discrete snapshot fields the predicted state does not carry (`condition`/`armor`/`bullets`);
+- `track(frame)` — per crossed frame: resets prediction on `camera[2]`, refreshes the meta, freezes prediction on `condition 0`, drops the meta when the tank leaves the canvas;
+- `getRenderData()` — `null` or `{ game, position }` for `renderTick`: the ghost barrier lives here, the result is `null` while there is no predicted state or the identity/meta are cleared;
+- `canFire()` — the fire gate of `ShotPredictor.tryFire` (a predicted state and a living tank);
+- `reset()` — clears the identity and calls `predictor.reset()`. Created next to the predictors when the port-0 config carries `prediction`. Covered by `tests/client/OwnTank.test.js`.
 
 ### ShotPredictor
 
@@ -88,6 +98,7 @@ The mapping of snapshot keys to classes and their distribution across canvases �
 
 - **UI/system** (no position): `playSystemSound(name)` — immediately, bypassing priorities (also used for port-6 sounds).
 - **Spatial** (a world position): `registerSound(name, { position })` → `processAudibility()` → `updateActiveSounds()` — the manager itself decides what is audible, respecting the voice limit (`WORLD_VOICE_LIMIT = 30`) and priorities from the config.
+- `reset()` (map change, round start) drops **all** registrations, while the `parts` that survive it keep their `_soundId`. Owners re-register lazily: `updateSoundData(id, data)` returns `false` when the registration is gone, and `Tank.update` reacts by clearing `_soundId` and calling `_initSounds()` again — otherwise a surviving tank would stay silent forever (the engine sound is the only looping one).
 
 ## InputListener
 
