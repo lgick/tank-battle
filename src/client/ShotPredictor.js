@@ -57,6 +57,8 @@ export default class ShotPredictor {
     this._localBombSeq = 0;
 
     // подтверждённые свои бомбы: серверный id → { localId, time }.
+    // Карта общая на все виды оружия: ключи глобально уникальны, потому что
+    // shotId на сервере — сквозной счётчик (Game._currentShotId).
     // Сущность на полотне живёт под локальным id от спавна до детонации —
     // иначе её пришлось бы удалить и создать заново, что рвёт одноразовый
     // звук и перезапускает таймер
@@ -339,7 +341,14 @@ export default class ShotPredictor {
 
         if (filtered.length !== source.length) {
           ensureCopy();
-          result[weaponName] = filtered;
+
+          // блок опустел (весь залп кадра оказался своим) — не тащим пустышку
+          // в кадр: applyGameData иначе зовёт parse по каждому полотну впустую
+          if (filtered.length === 0) {
+            delete result[weaponName];
+          } else {
+            result[weaponName] = filtered;
+          }
         }
       }
 
@@ -351,10 +360,10 @@ export default class ShotPredictor {
 
         const ensureBombs = () => {
           if (bombs === null) {
+            ensureCopy();
             // копия берётся из result: там уже могут лежать инъекции null
             // по локальным ключам похороненных бомб
             bombs = { ...result[weaponName] };
-            ensureCopy();
             result[weaponName] = bombs;
           }
         };
@@ -403,6 +412,12 @@ export default class ShotPredictor {
             }
           }
         }
+
+        // блок опустел (подавили всё, что в нём было) — не тащим пустышку
+        // в кадр: applyGameData иначе зовёт parse по каждому полотну впустую
+        if (bombs !== null && Object.keys(bombs).length === 0) {
+          delete result[weaponName];
+        }
       }
     }
 
@@ -426,7 +441,8 @@ export default class ShotPredictor {
   reset() {
     this.resetLocal();
     this._bombAliases = {};
-    // после CLEAR полотно чистится целиком — доставлять null некому
+    // resetLocal() похоронил pending, но после CLEAR полотно чистится
+    // целиком — доставлять null некому
     this._expiredLocalBombs = [];
   }
 

@@ -258,6 +258,19 @@ describe('ShotPredictor: подавление серверных дублей', 
     expect(second.w1).toEqual([own]);
   });
 
+  it('весь залп кадра свой: опустевший блок в кадр не попадает', () => {
+    predictor.tryFire(restingState(), 1, 0);
+
+    const own = [0, 0, 10, 0, 0, 0, false, 1];
+    const game = { w1: [own] };
+    const result = predictor.filterServerSnapshot(game, 1, 100);
+
+    expect(result.w1).toBeUndefined();
+
+    // исходный кадр не мутируется
+    expect(game.w1).toEqual([own]);
+  });
+
   it('протухший pending (>2с) не съедает свежие серверные трассеры', () => {
     predictor.tryFire(restingState(), 1, 0);
 
@@ -288,7 +301,8 @@ describe('ShotPredictor: подавление серверных дублей', 
       100,
     );
 
-    expect(created.w2).toEqual({});
+    // опустевший блок из кадра убирается целиком
+    expect(created.w2).toBeUndefined();
 
     // взрыв: null переезжает под локальный ключ — снимает локальную сущность
     const explosion = predictor.filterServerSnapshot({ w2: { a7: null } }, 1, 400);
@@ -305,6 +319,22 @@ describe('ShotPredictor: подавление серверных дублей', 
     const game = { w2: { a7: [0, 0, 0, 8, 300, 2] } };
 
     expect(predictor.filterServerSnapshot(game, 1, 0)).toBe(game);
+  });
+
+  it('смерть с поставленной бомбой: детонация снимает сущность после resetLocal', () => {
+    predictor.syncPanel(['wa:w2']);
+
+    const spawn = predictor.tryFire(restingState(), 1, 0);
+    const localId = Object.keys(spawn.w2)[0];
+
+    predictor.filterServerSnapshot({ w2: { a7: [0, 0, 0, 8, 300, 1] } }, 1, 100);
+
+    // смерть: keySet 0 → resetLocal(), gameId наблюдателя уже сброшен
+    predictor.resetLocal();
+
+    const explosion = predictor.filterServerSnapshot({ w2: { a7: null } }, null, 400);
+
+    expect(explosion.w2).toEqual({ [localId]: null });
   });
 
   it('resetLocal хоронит неподтверждённую бомбу, но сохраняет алиасы', () => {
