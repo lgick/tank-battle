@@ -488,8 +488,6 @@ function renderTick() {
   const now = performance.now();
   const { frames, game, camera } = interpolator.sample(now);
 
-  shotPredictor?.setServerOffset(interpolator.offset);
-
   frames.forEach(frame => {
     ownTank?.track(frame);
 

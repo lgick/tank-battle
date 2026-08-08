@@ -107,7 +107,9 @@ CanvasManager; InputListener; SoundManager (`processAudibility`).
 ## Вне scope (unit-тесты нецелесообразны)
 
 - **Pixi-рендеринг**: `src/client/parts/**`, `src/client/providers/**` —
-  нужны моки PixiJS renderer; уместнее визуальные/e2e тесты.
+  нужны моки PixiJS renderer; уместнее визуальные/e2e тесты. Исключение —
+  применение данных внутри part'а: `Bomb.update` (авторитетная коррекция
+  позиции) покрыт `tests/client/parts/Bomb.test.js` с моком `pixi.js`.
 - **Entry/IO**: `src/client/main.js`, `src/server/main.js` — на импорте поднимают
   сервер/Vite/сертификаты, тестировать нецелесообразно. (`socket/index.js` уже
   покрыт интеграцией, см. выше.)

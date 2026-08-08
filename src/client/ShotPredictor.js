@@ -63,15 +63,6 @@ export default class ShotPredictor {
     // иначе её пришлось бы удалить и создать заново, что рвёт одноразовый
     // звук и перезапускает таймер
     this._bombAliases = {};
-
-    // оценка (serverTime − localNow) из SnapshotInterpolator; используется
-    // для RTT-компенсации позиции бомбы при спавне
-    this._serverOffset = null;
-  }
-
-  // обновляет оценку задержки сети (вызывается из рендер-тика)
-  setServerOffset(offset) {
-    this._serverOffset = offset;
   }
 
   // модель танка пользователя (известна при авторизации)
@@ -254,22 +245,14 @@ export default class ShotPredictor {
 
       this._pendingBombs.push({ time: localNow, weaponName, localId });
 
-      // RTT/2-компенсация: экстраполируем позицию на время до обработки сервером
-      let spawnX = renderState.x;
-      let spawnY = renderState.y;
-
-      if (this._serverOffset !== null) {
-        const lagMs = -this._serverOffset;
-
-        spawnX += (renderState.vx || 0) * (lagMs / 1000);
-        spawnY += (renderState.vy || 0) * (lagMs / 1000);
-      }
-
+      // бомба спавнится ровно там, где предсказан танк: RTT-компенсации нет,
+      // потому что клиент не знает своей задержки (interpolator.offset — это
+      // разница часов Date.now/performance.now, а не латентность)
       return {
         [weaponName]: {
           [localId]: [
-            spawnX,
-            spawnY,
+            renderState.x,
+            renderState.y,
             0,
             weapon.size,
             weapon.time,
@@ -404,20 +387,21 @@ export default class ShotPredictor {
             if (index !== -1) {
               const [pending] = this._pendingBombs.splice(index, 1);
 
-              // серверная строка до клиента не доезжает: сущность уже стоит под
-              // локальным id, и он остаётся её именем — до самой детонации
+              // сущность уже стоит под локальным id, и он остаётся её именем
+              // до самой детонации: серверная строка переезжает под этот ключ
+              // (parse уйдёт в update, а не в create — звук и таймер целы) и
+              // одноразово поправляет позицию на авторитетную
               ensureBombs();
               delete bombs[id];
+              bombs[pending.localId] = data;
               this._bombAliases[id] = { localId: pending.localId, time: localNow };
             }
           }
         }
 
-        // блок опустел (подавили всё, что в нём было) — не тащим пустышку
-        // в кадр: applyGameData иначе зовёт parse по каждому полотну впустую
-        if (bombs !== null && Object.keys(bombs).length === 0) {
-          delete result[weaponName];
-        }
+        // блок пустым остаться не может: обе ветки выше взамен удалённого
+        // серверного ключа пишут локальный, поэтому чистка пустышки (как в
+        // hitscan-ветке) здесь не нужна
       }
     }
 

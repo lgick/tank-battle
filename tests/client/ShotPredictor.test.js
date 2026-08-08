@@ -215,23 +215,11 @@ describe('ShotPredictor: бомба (w2)', () => {
     expect(params).toEqual([42, -17, 0, 8, 300, 3]);
   });
 
-  it('RTT-компенсация: позиция экстраполируется на lagMs = −offset', () => {
-    predictor.syncPanel(['wa:w2']);
-    predictor.setServerOffset(-200); // RTT/2 ≈ 200ms
-
-    // танк едет вправо со скоростью 100 юн/с
-    const state = { x: 0, y: 0, vx: 100, vy: 0, angle: 0, gunRotation: 0 };
-    const { w2 } = predictor.tryFire(state, 1, 0);
-    const [, params] = Object.entries(w2)[0];
-
-    // spawnX = 0 + 100 × (200/1000) = 20
-    expect(params[0]).toBeCloseTo(20);
-    expect(params[1]).toBeCloseTo(0);
-  });
-
-  it('без serverOffset позиция не компенсируется', () => {
+  it('позиция не экстраполируется по скорости', () => {
     predictor.syncPanel(['wa:w2']);
 
+    // клиент не знает своей латентности, поэтому бомба ложится ровно
+    // в предсказанную позицию танка
     const state = { x: 10, y: 20, vx: 100, vy: 50, angle: 0, gunRotation: 0 };
     const { w2 } = predictor.tryFire(state, 1, 0);
     const [, params] = Object.entries(w2)[0];
@@ -294,15 +282,15 @@ describe('ShotPredictor: подавление серверных дублей', 
 
     const bombData = [0, 0, 0, 8, 300, 1];
 
-    // серверное создание: строка не доезжает, регистрируется алиас a7 → L<n>
+    // серверное создание: строка переезжает под локальный ключ (регистрируя
+    // алиас a7 → L<n>) и одноразово поправляет позицию на авторитетную
     const created = predictor.filterServerSnapshot(
       { w2: { a7: bombData } },
       1,
       100,
     );
 
-    // опустевший блок из кадра убирается целиком
-    expect(created.w2).toBeUndefined();
+    expect(created.w2).toEqual({ [localId]: bombData });
 
     // взрыв: null переезжает под локальный ключ — снимает локальную сущность
     const explosion = predictor.filterServerSnapshot({ w2: { a7: null } }, 1, 400);

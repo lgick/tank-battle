@@ -90,7 +90,25 @@ export default class Bomb extends Container {
     }
   }
 
-  update() {}
+  // серверная строка приходит один раз — подтверждением локально
+  // предсказанной бомбы: переносим сущность в авторитетную точку
+  update(params) {
+    this.x = params[0];
+    this.y = params[1];
+    this.rotation = params[2];
+
+    if (this._soundId) {
+      const alive = this._soundManager.updateSoundData(this._soundId, {
+        position: { x: this.x, y: this.y },
+      });
+
+      // регистрацию мог снять reset(); перерегистрировать нечего —
+      // сэмпл постановки одноразовый
+      if (!alive) {
+        this._soundId = null;
+      }
+    }
+  }
 
   _stopTimer() {
     if (this._tickListener) {
