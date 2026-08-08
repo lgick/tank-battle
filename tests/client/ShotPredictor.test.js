@@ -273,7 +273,7 @@ describe('ShotPredictor: подавление серверных дублей', 
     expect(predictor.filterServerSnapshot(game, 1, 0)).toBe(game);
   });
 
-  it('своя бомба: локальная удаляется при подтверждении, серверная становится авторитетной', () => {
+  it('своя бомба: живёт под локальным id, серверные строки переезжают по алиасу', () => {
     predictor.syncPanel(['wa:w2']);
 
     const spawn = predictor.tryFire(restingState(), 1, 0);
@@ -281,25 +281,79 @@ describe('ShotPredictor: подавление серверных дублей', 
 
     const bombData = [0, 0, 0, 8, 300, 1];
 
-    // серверное создание: локальная бомба зачищается, серверная проходит в game
+    // серверное создание: строка не доезжает, регистрируется алиас a7 → L<n>
     const created = predictor.filterServerSnapshot(
       { w2: { a7: bombData } },
       1,
       100,
     );
 
-    expect(created.w2).toEqual({ [localId]: null, a7: bombData });
+    expect(created.w2).toEqual({});
 
-    // frame 2+: серверная бомба проходит как апдейт (pending пуст)
-    const game2 = { w2: { a7: bombData } };
-    const frame2 = predictor.filterServerSnapshot(game2, 1, 133);
-
-    expect(frame2).toBe(game2);
-
-    // взрыв: null от сервера проходит напрямую — удаляет серверную сущность
+    // взрыв: null переезжает под локальный ключ — снимает локальную сущность
     const explosion = predictor.filterServerSnapshot({ w2: { a7: null } }, 1, 400);
 
-    expect(explosion.w2).toEqual({ a7: null });
+    expect(explosion.w2).toEqual({ [localId]: null });
+
+    // алиас снят: последующий null по a7 проходит напрямую
+    const after = predictor.filterServerSnapshot({ w2: { a7: null } }, 1, 500);
+
+    expect(after.w2).toEqual({ a7: null });
+  });
+
+  it('чужая бомба проходит без изменений', () => {
+    const game = { w2: { a7: [0, 0, 0, 8, 300, 2] } };
+
+    expect(predictor.filterServerSnapshot(game, 1, 0)).toBe(game);
+  });
+
+  it('resetLocal хоронит неподтверждённую бомбу, но сохраняет алиасы', () => {
+    predictor.syncPanel(['wa:w2']);
+
+    const spawn = predictor.tryFire(restingState(), 1, 0);
+    const localId = Object.keys(spawn.w2)[0];
+
+    predictor.filterServerSnapshot({ w2: { a7: [0, 0, 0, 8, 300, 1] } }, 1, 100);
+
+    // вторая бомба остаётся неподтверждённой
+    const spawn2 = predictor.tryFire(restingState(), 1, 5000);
+    const localId2 = Object.keys(spawn2.w2)[0];
+
+    predictor.resetLocal();
+
+    // похороны неподтверждённой + алиас первой пережил сброс
+    const frame = predictor.filterServerSnapshot({ w2: { a7: null } }, 1, 5100);
+
+    expect(frame.w2).toEqual({ [localId2]: null, [localId]: null });
+  });
+
+  it('reset снимает алиасы и не тащит похороны на очищенное полотно', () => {
+    predictor.syncPanel(['wa:w2']);
+
+    predictor.tryFire(restingState(), 1, 0);
+    predictor.filterServerSnapshot({ w2: { a7: [0, 0, 0, 8, 300, 1] } }, 1, 100);
+
+    predictor.reset();
+
+    // после CLEAR полотно чистится целиком — доставлять null некому
+    expect(predictor.filterServerSnapshot({}, 1, 200)).toEqual({});
+
+    // алиас снят: серверный null проходит напрямую
+    const frame = predictor.filterServerSnapshot({ w2: { a7: null } }, 1, 300);
+
+    expect(frame.w2).toEqual({ a7: null });
+  });
+
+  it('алиас снимается по возрасту', () => {
+    predictor.syncPanel(['wa:w2']);
+
+    predictor.tryFire(restingState(), 1, 0);
+    predictor.filterServerSnapshot({ w2: { a7: [0, 0, 0, 8, 300, 1] } }, 1, 100);
+
+    // BOMB_ALIAS_MAX_AGE = 60000 мс
+    const frame = predictor.filterServerSnapshot({ w2: { a7: null } }, 1, 61000);
+
+    expect(frame.w2).toEqual({ a7: null });
   });
 
   it('гейт: вторая бомба блокируется до подтверждения первой сервером', () => {

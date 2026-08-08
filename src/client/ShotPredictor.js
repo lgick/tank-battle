@@ -19,6 +19,11 @@ const FORWARD = new Vec2(1, 0);
 // старше — сервер выстрел отклонил, запись не должна съедать чужие дубли
 const PENDING_MAX_AGE = 2000;
 
+// максимальный возраст алиаса своей бомбы (мс). Штатно алиас снимается
+// null'ом детонации; этот срок — только страховка от утечки, если null
+// потерялся, поэтому он с запасом больше любого разумного weapon.time
+const BOMB_ALIAS_MAX_AGE = 60000;
+
 export default class ShotPredictor {
   /**
    * @param {Object} options
@@ -50,6 +55,12 @@ export default class ShotPredictor {
     this._pendingBombs = []; // [{ time, weaponName, localId }]
     this._expiredLocalBombs = []; // [{ localId, weaponName }] — истёкшие без подтверждения
     this._localBombSeq = 0;
+
+    // подтверждённые свои бомбы: серверный id → { localId, time }.
+    // Сущность на полотне живёт под локальным id от спавна до детонации —
+    // иначе её пришлось бы удалить и создать заново, что рвёт одноразовый
+    // звук и перезапускает таймер
+    this._bombAliases = {};
 
     // оценка (serverTime − localNow) из SnapshotInterpolator; используется
     // для RTT-компенсации позиции бомбы при спавне
@@ -332,15 +343,17 @@ export default class ShotPredictor {
         }
       }
 
-      // бомбы: при первом подтверждении своей — локальная L<n> заменяется
-      // серверной сущностью; null от взрыва проходит напрямую
+      // бомбы: своя сущность живёт под локальным L<n> от спавна до детонации,
+      // серверные строки переезжают под этот ключ по карте алиасов
       if (type === 'explosive' && typeof game[weaponName] === 'object') {
         const source = game[weaponName];
         let bombs = null;
 
         const ensureBombs = () => {
           if (bombs === null) {
-            bombs = { ...source };
+            // копия берётся из result: там уже могут лежать инъекции null
+            // по локальным ключам похороненных бомб
+            bombs = { ...result[weaponName] };
             ensureCopy();
             result[weaponName] = bombs;
           }
@@ -353,8 +366,24 @@ export default class ShotPredictor {
 
           const data = source[id];
 
+          // строка под известным алиасом (в первую очередь null детонации)
+          // переезжает под локальный ключ: под ним сущность живёт с самого спавна
+          if (Object.hasOwn(this._bombAliases, id)) {
+            const { localId } = this._bombAliases[id];
+
+            ensureBombs();
+            delete bombs[id];
+            bombs[localId] = data;
+
+            if (data === null) {
+              delete this._bombAliases[id];
+            }
+
+            continue;
+          }
+
+          // чужой взрыв проходит напрямую — удаляет чужую сущность
           if (data === null) {
-            // null от взрыва проходит напрямую — удаляет серверную сущность
             continue;
           }
 
@@ -366,9 +395,11 @@ export default class ShotPredictor {
             if (index !== -1) {
               const [pending] = this._pendingBombs.splice(index, 1);
 
-              // локальная бомба уступает место серверной авторитетной сущности
+              // серверная строка до клиента не доезжает: сущность уже стоит под
+              // локальным id, и он остаётся её именем — до самой детонации
               ensureBombs();
-              bombs[pending.localId] = null;
+              delete bombs[id];
+              this._bombAliases[id] = { localId: pending.localId, time: localNow };
             }
           }
         }
@@ -378,15 +409,38 @@ export default class ShotPredictor {
     return result;
   }
 
-  // полный сброс (смена карты/clear/keySet)
-  reset() {
+  // сброс режима игрок/наблюдатель (KEYSET_DATA): локальные ставки на
+  // выстрелы аннулируются, но подтверждённые бомбы продолжают жить под
+  // своими локальными id — их снимет серверный null детонации, который
+  // приходит позже keySet
+  resetLocal() {
     this._pendingTracers = [];
-    this._pendingBombs = [];
-    this._expiredLocalBombs = [];
+    this._buryPendingBombs();
     this._cooldownUntil = {};
     this._ammo = {};
     this._tanks = {};
     this._currentWeapon = this._modelData?.currentWeapon ?? null;
+  }
+
+  // полный сброс (смена карты/clear)
+  reset() {
+    this.resetLocal();
+    this._bombAliases = {};
+    // после CLEAR полотно чистится целиком — доставлять null некому
+    this._expiredLocalBombs = [];
+  }
+
+  // хоронит неподтверждённые локальные бомбы: null по локальному id уйдёт
+  // в ближайший кадр, иначе спрайт останется на полотне
+  _buryPendingBombs() {
+    for (const pending of this._pendingBombs) {
+      this._expiredLocalBombs.push({
+        localId: pending.localId,
+        weaponName: pending.weaponName,
+      });
+    }
+
+    this._pendingBombs = [];
   }
 
   // собирает данные трассера: реплика формул Tank.getMuzzlePosition/
@@ -495,6 +549,18 @@ export default class ShotPredictor {
       const expired = this._pendingBombs.shift();
 
       this._expiredLocalBombs.push({ localId: expired.localId, weaponName: expired.weaponName });
+    }
+
+    // страховка от утечки, если null детонации потерялся
+    const aliasMinTime = localNow - BOMB_ALIAS_MAX_AGE;
+
+    for (const id in this._bombAliases) {
+      if (
+        Object.hasOwn(this._bombAliases, id) &&
+        this._bombAliases[id].time < aliasMinTime
+      ) {
+        delete this._bombAliases[id];
+      }
     }
   }
 }

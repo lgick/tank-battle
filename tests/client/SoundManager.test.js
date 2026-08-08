@@ -113,6 +113,7 @@ const makeRegistryCtx = (sounds = new Map()) => ({
   setListenerPosition: P.setListenerPosition,
   registerSound: P.registerSound,
   unregisterSound: P.unregisterSound,
+  releaseSound: P.releaseSound,
   updateSoundData: P.updateSoundData,
 });
 
@@ -191,6 +192,41 @@ describe('SoundManager.unregisterSound', () => {
 
     expect(ctx._internalStop).toHaveBeenCalledWith(42);
     expect(ctx._registeredSounds.has(id)).toBe(false);
+  });
+});
+
+describe('SoundManager.releaseSound', () => {
+  it('снимает регистрацию, но даёт одноразовому сэмплу доиграть', () => {
+    const ctx = makeRegistryCtx(
+      new Map([['s', { sound: {}, config: { priority: 50 } }]]),
+    );
+    const id = ctx.registerSound('s', { position: { x: 0, y: 0 } });
+    ctx._registeredSounds.get(id).activeSoundId = 42;
+
+    ctx.releaseSound(id);
+
+    expect(ctx._internalStop).not.toHaveBeenCalled();
+    expect(ctx._registeredSounds.has(id)).toBe(false);
+  });
+
+  it('останавливает играющий луп', () => {
+    const ctx = makeRegistryCtx(
+      new Map([['s', { sound: {}, config: { priority: 50, loop: true } }]]),
+    );
+    const id = ctx.registerSound('s', { position: { x: 0, y: 0 } });
+    ctx._registeredSounds.get(id).activeSoundId = 7;
+
+    ctx.releaseSound(id);
+
+    expect(ctx._internalStop).toHaveBeenCalledWith(7);
+    expect(ctx._registeredSounds.has(id)).toBe(false);
+  });
+
+  it('неизвестный id не приводит к ошибке', () => {
+    const ctx = makeRegistryCtx();
+
+    expect(() => ctx.releaseSound(Symbol('ghost'))).not.toThrow();
+    expect(ctx._internalStop).not.toHaveBeenCalled();
   });
 });
 

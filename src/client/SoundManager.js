@@ -196,6 +196,28 @@ export default class SoundManager {
   }
 
   /**
+   * Снимает звук с регистрации, но даёт уже звучащему одноразовому сэмплу
+   * доиграть. Для сущностей, которые исчезают раньше своего звука
+   * (например, взорвавшаяся бомба). Луп останавливается как обычно.
+   * Отпущенный сэмпл больше не участвует в приоритетах и лимите голосов
+   * и не обновляет панораму — осознанный размен ради целостности звука.
+   * @param {symbol} id - ID, полученный от `registerSound`.
+   */
+  releaseSound(id) {
+    const sound = this._registeredSounds.get(id);
+
+    if (!sound) {
+      return;
+    }
+
+    if (sound.loop && sound.activeSoundId !== null) {
+      this._internalStop(sound.activeSoundId);
+    }
+
+    this._registeredSounds.delete(id);
+  }
+
+  /**
    * Обновляет параметры зарегистрированного звука.
    * @param {symbol} id - ID, полученный от `registerSound`.
    * @param {object} data - Новые параметры.

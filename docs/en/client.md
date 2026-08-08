@@ -73,7 +73,7 @@ The purpose of the components:
 - the tracer's end point is an approximate raycast ([src/lib/raycast.js](../../src/lib/raycast.js)): `rayVsGrid` (DDA over wall tiles) + `rayVsBox` (map dynamics and tanks) over interpolated positions;
 - **the bomb gate**: the next `explosive` shot is allowed only after the previous one is confirmed by the server — this eliminates FIFO desync under high RTT;
 - **RTT position compensation**: when a bomb spawns, the local position is extrapolated by `velocity × (RTT/2)` (estimated from `interpolator.offset`) so it matches the server position at the moment the command is processed;
-- **suppressing server duplicates** (`filterServerSnapshot`) by the author id in the event data (`tracers[7]`, `bombs[5]`): own tracers — a FIFO pending queue with a 2 s timeout; the own bomb — on confirmation the local entity (`L<n>`) is removed and the server one becomes authoritative (the local key `L<n>` does not collide with the server's base36 keys).
+- **suppressing server duplicates** (`filterServerSnapshot`) by the author id in the event data (`tracers[7]`, `bombs[5]`): own tracers — a FIFO pending queue with a 2 s timeout; the own bomb — on confirmation the server row never reaches the client, its id is remembered as an alias of the local one (`L<n>`): the entity lives under the local key from spawn to detonation, and the explosion `null` is renamed to that key too. This way the bomb is never recreated — otherwise its timer and its one-shot planting sound would restart. Aliases are dropped by the detonation `null`, by age (`BOMB_ALIAS_MAX_AGE`) and by a full `reset()`; a keySet change (`resetLocal()`) does **not** touch them, because keySet arrives before the detonation frame. The local key `L<n>` does not collide with the server's base36 keys.
 
 ## Rendering
 
@@ -98,6 +98,7 @@ The mapping of snapshot keys to classes and their distribution across canvases �
 
 - **UI/system** (no position): `playSystemSound(name)` — immediately, bypassing priorities (also used for port-6 sounds).
 - **Spatial** (a world position): `registerSound(name, { position })` → `processAudibility()` → `updateActiveSounds()` — the manager itself decides what is audible, respecting the voice limit (`WORLD_VOICE_LIMIT = 30`) and priorities from the config.
+- `unregisterSound(id)` drops the registration and stops the sound together with its owner; `releaseSound(id)` drops the registration but lets an already playing one-shot sample finish (a loop is still stopped). The latter is for entities that disappear before their sound does: `parts/Bomb.destroy()` — the bomb lives 300 ms, the planting sample lasts longer.
 - `reset()` (map change, round start) drops **all** registrations, while the `parts` that survive it keep their `_soundId`. Owners re-register lazily: `updateSoundData(id, data)` returns `false` when the registration is gone, and `Tank.update` reacts by clearing `_soundId` and calling `_initSounds()` again — otherwise a surviving tank would stay silent forever (the engine sound is the only looping one).
 
 ## InputListener

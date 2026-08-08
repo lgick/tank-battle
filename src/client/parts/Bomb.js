@@ -103,7 +103,9 @@ export default class Bomb extends Container {
     this._stopTimer();
 
     if (this._soundId) {
-      this._soundManager.unregisterSound(this._soundId);
+      // одноразовый сэмпл постановки живёт дольше самой бомбы
+      // (её убирает детонация через weapon.time) — отпускаем, а не обрываем
+      this._soundManager.releaseSound(this._soundId);
       this._soundId = null;
     }
 

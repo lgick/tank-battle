@@ -356,7 +356,9 @@ socketMethods[PS_VOTE_DATA] = data => {
 socketMethods[PS_KEYSET_DATA] = keySet => {
   modules.controls?.changeKeySet(keySet);
   predictor?.setActive(keySet === 1);
-  shotPredictor?.reset();
+  // не полный reset: алиасы подтверждённых бомб должны пережить смену
+  // режима — null детонации приходит позже keySet (буфер интерполяции)
+  shotPredictor?.resetLocal();
 };
 
 // sound data
