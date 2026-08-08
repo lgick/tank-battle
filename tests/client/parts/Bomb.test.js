@@ -56,8 +56,9 @@ const assets = { bombTexture: { width: 64 } };
 
 let soundManager;
 
+// формат серверной строки: [x, y, rotation, size, time, ownerId]
 const makeBomb = () =>
-  new Bomb([10, 20, 0, 8, 300], assets, { soundManager });
+  new Bomb([10, 20, 0, 8, 300, 1], assets, { soundManager });
 
 beforeEach(() => {
   Ticker.shared.add.mockClear();
